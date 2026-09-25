@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
+import os
 
 app = Flask(__name__)
 
@@ -26,5 +27,11 @@ def contact():
     # If it's a GET request, just show the HTML form page
     return render_template('contact.html')
 
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get the port from Render's environment, defaulting to 5000 for local development
+    port = int(os.environ.get("PORT", 5000))
+    
+    # 0.0.0.0 tells Flask to listen to all public network interfaces 
+    app.run(host='0.0.0.0', port=port, debug=False)
