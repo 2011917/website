@@ -3,13 +3,370 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>My Flask Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Project Showcase — Cyber Green</title>
+    <style>
+        :root {
+            --bg: #060a08;
+            --bg-panel: #0b110d;
+            --bg-panel-2: #0f1712;
+            --border: #1a2e22;
+            --border-bright: #2b5c3e;
+            --text: #d9f5e6;
+            --text-dim: #7fa593;
+            --green: #39ff8a;
+            --green-bright: #7dffb0;
+            --green-dim: #1c7a48;
+            font-size: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57, 255, 138, 0.08), transparent),
+                var(--bg);
+            color: var(--text);
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 3rem 1.5rem 5rem;
+            line-height: 1.5;
+        }
+
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto 2.5rem;
+            padding-bottom: 1.1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: -0.01em;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo .mark {
+            width: 22px;
+            height: 22px;
+            background: var(--green);
+            display: inline-block;
+            box-shadow: 0 0 12px rgba(57, 255, 138, 0.5);
+        }
+
+        .topbar nav {
+            display: flex;
+            gap: 1.75rem;
+        }
+
+        .topbar nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.87rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: color 0.12s ease;
+        }
+
+        .topbar nav a:hover {
+            color: var(--green);
+        }
+
+        .topbar nav svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .page-head {
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-size: 2.1rem;
+            margin: 0 0 0.4rem;
+            letter-spacing: -0.02em;
+            text-shadow: 0 0 24px rgba(57, 255, 138, 0.25);
+        }
+
+        .sub {
+            color: var(--text-dim);
+            margin: 0;
+            font-size: 0.95rem;
+            max-width: 560px;
+        }
+
+        /* Filter row */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1.75rem 0 2rem;
+        }
+
+        .filter {
+            font-size: 0.82rem;
+            padding: 0.45rem 0.9rem;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .filter.active {
+            color: #04140b;
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .filter:hover:not(.active) {
+            border-color: var(--border-bright);
+            color: var(--text);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .project {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .project:hover {
+            border-color: var(--border-bright);
+            box-shadow: 0 0 20px rgba(57, 255, 138, 0.08);
+        }
+
+        .thumb {
+            aspect-ratio: 16 / 10;
+            background:
+                repeating-linear-gradient(135deg, rgba(57, 255, 138, 0.05) 0 2px, transparent 2px 14px),
+                var(--bg-panel-2);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--green-dim);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .thumb.no-image img {
+            display: none;
+        }
+
+        .thumb span.fallback-label {
+            display: none;
+        }
+
+        .thumb.no-image span.fallback-label {
+            display: block;
+        }
+
+        .thumb::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+        }
+
+        .project-body {
+            padding: 1.1rem 1.2rem 1.3rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .tag-row {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.68rem;
+            padding: 0.15rem 0.5rem;
+            border: 1px solid var(--green-dim);
+            color: var(--green);
+            background: rgba(57, 255, 138, 0.05);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .project h3 {
+            margin: 0 0 0.4rem;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+        }
+
+        .project p {
+            margin: 0 0 1.1rem;
+            color: var(--text-dim);
+            font-size: 0.87rem;
+            flex: 1;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        button,
+        .btn {
+            font-family: inherit;
+            font-size: 0.83rem;
+            font-weight: 600;
+            padding: 0.55rem 1rem;
+            border-radius: 0;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: #04140b;
+            border-color: var(--green);
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: var(--green-bright);
+            border-color: var(--green-bright);
+            box-shadow: 0 0 14px rgba(57, 255, 138, 0.4);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-dim);
+            border-color: var(--border);
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+            border-color: var(--border-bright);
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Welcome to My Website, {{ user_name }}!</h1>
-    <p>This page is being dynamically rendered by Flask.</p>
-    <a href="/contact">Go to Contact Page</a>
+    <div class="topbar">
+        <a href="#" class="logo"><span class="mark"></span>YOURBRAND</a>
+        <nav>
+            <a href="https://github.com/2011917" target="_blank" rel="noopener">
+                <svg viewBox="0 0 16 16">
+                    <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                GitHub
+            </a>
+
+        </nav>
+    </div>
+    <div class="wrap">
+        <div class="page-head">
+            <h1>Projects</h1>
+            <p class="sub">A selection of things I've built. Filter by type or open a project to see more.</p>
+        </div>
+
+        <div class="filters">
+            <button class="filter active" data-filter="all">All</button>
+            <button class="filter" data-filter="HTML">HTML</button>
+
+        </div>
+
+        <div class="grid">
+
+            <div class="project" data-category="HTML" data-demo="/notepad"
+                data-source="https://github.com/yourname/task-runner">
+                <div class="thumb"><img src="/static/images/notepad_thumbnail.png" alt="Failed to load thumbnail"
+                        onerror="this.parentElement.classList.add('no-image'); this.remove();"><span
+                        class="fallback-label">thumbnail</span></div>
+                <div class="project-body">
+                    <div class="tag-row"><span class="tag">HTML</span></div>
+                    <h3>Autocorrect Notepad</h3>
+                    <p>A simple notepad with autocorrect and spellcheck.</p>
+
+                    <div class="project-actions">
+                        <button class="btn-primary" data-action="view">View project</button>
+                        <button class="btn-ghost" data-action="source">Source</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+
+    <script>
+        const filterButtons = document.querySelectorAll('.filter');
+        const projects = document.querySelectorAll('.project');
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const filter = btn.dataset.filter;
+                projects.forEach(p => {
+                    const show = filter === 'all' || p.dataset.category === filter;
+                    p.style.display = show ? '' : 'none';
+                });
+            });
+        });
+
+        projects.forEach(p => {
+            const demoUrl = p.dataset.demo;
+            const sourceUrl = p.dataset.source;
+
+            const viewBtn = p.querySelector('[data-action="view"]');
+            const sourceBtn = p.querySelector('[data-action="source"]');
+
+            if (viewBtn && demoUrl) {
+                viewBtn.addEventListener('click', () => window.open(demoUrl, '_blank', 'noopener'));
+            }
+            if (sourceBtn && sourceUrl) {
+                sourceBtn.addEventListener('click', () => window.open(sourceUrl, '_blank', 'noopener'));
+            }
+        });
+    </script>
 </body>
 
 </html>

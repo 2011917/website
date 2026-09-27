@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Smart Notepad</title>
+  <style>
+    :root {
+      --bg: #060a08;
+      --surface: #0b110d;
+      --text: #d9f5e6;
+      --muted: #7fa593;
+      --border: #1a2e22;
+      --border-bright: #2b5c3e;
+      --accent: #39ff8a;
+      --accent-bright: #7dffb0;
+      --ghost: #1c7a48;
+      --shadow: 0 0 0 rgba(0, 0, 0, 0);
+      --radius: 0px;
+      --font-ui: system-ui, -apple-system, sans-serif;
+      --font-ed: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57, 255, 138, 0.08), transparent),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-width: 780px;
+      margin: auto;
+      padding: 20px 24px 16px;
+      gap: 14px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(57, 255, 138, 0.5);
+    }
+
+    .brand-icon svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: #04140b;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    h1 {
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      color: var(--text);
+      text-shadow: 0 0 16px rgba(57, 255, 138, 0.2);
+    }
+
+    #dict-status {
+      margin-left: auto;
+      font-size: .75rem;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3px 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+      flex-shrink: 0;
+    }
+
+    /* ── Editor wrap ─────────────────────────────────────────────────────────── */
+    #editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    #ghost {
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+      white-space: pre;
+      color: var(--ghost);
+      font: inherit;
+      line-height: 1.72;
+      font-size: 1.05rem;
+      font-family: var(--font-ed);
+      padding: 18px 20px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    #ghost.hidden {
+      display: none;
+    }
+
+    #ghost-word {
+      cursor: pointer;
+      pointer-events: auto;
+      background: rgba(57, 255, 138, 0.1);
+      border-radius: 0;
+      padding: 0 1px;
+    }
+
+    #ghost-word.correct {
+      background: rgba(57, 255, 138, 0.07);
+      text-decoration: underline;
+      text-decoration-color: rgba(57, 255, 138, 0.4);
+      text-underline-offset: 2px;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-family: var(--font-ed);
+      font-size: 1.05rem;
+      line-height: 1.72;
+      outline: none;
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      resize: none;
+      caret-color: var(--accent);
+      box-shadow: var(--shadow);
+      transition: border-color .15s, box-shadow .15s;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #editor:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(57, 255, 138, 0.25), 0 0 20px rgba(57, 255, 138, 0.1);
+    }
+
+    #editor::placeholder {
+      color: var(--muted);
+      opacity: .6;
+      font-style: italic;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────────── */
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    #word-count {
+      font-size: .75rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hint {
+      font-size: .72rem;
+      color: var(--muted);
+      opacity: .7;
+      letter-spacing: .01em;
+    }
+
+    /* ── Mobile ─────────────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      body {
+        padding: 12px 14px 10px;
+        gap: 10px;
+      }
+
+      #dict-status {
+        max-width: 38vw;
+        font-size: .7rem;
+      }
+
+      #ghost {
+        padding: 15px 16px;
+        font-size: 16px;
+      }
+
+      #editor {
+        padding: 15px 16px;
+        font-size: 16px;
+      }
+
+      .hint {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 16 16">
+          <path d="M2 13 L9 6 L11 8 L4 15 Z" />
+          <path d="M9 6 L12 3 Q13.5 1.5 14 3 Q14.5 4 13 5 L11 8 Z" />
+          <path d="M2 13 L3 13 L3 14 L2 14 Z" stroke-width="0" fill="#04140b" opacity=".6" />
+        </svg>
+      </div>
+      <h1>Smart Notepad</h1>
+    </div>
+    <span id="dict-status">Loading dictionary…</span>
+  </header>
+
+  <div id="editor-wrap">
+    <div id="ghost" class="hidden"><span id="ghost-word"></span></div>
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+      placeholder="Start writing…"></textarea>
+  </div>
+
+  <footer>
+    <span id="word-count">0 words</span>
+    <span class="hint">Tab to accept · Esc to dismiss</span>
+  </footer>
+
+  <script>
+    'use strict';
+
+    /* ────────────────────────────────────────────────────────────────────────────
+       Smart Notepad
+       - Single HTML file.
+       - Dictionary is fetched once and cached in localStorage.
+       - Completion: shortest dictionary word beginning with the current word
+         and strictly less than twice its length.
+       - Correction: closest dictionary word when completion is unavailable.
+       - Tab accepts; tapping the suggestion accepts on all devices.
+       - On touch devices, tapping the editor while a suggestion is visible also
+         accepts the current suggestion, as requested.
+       ──────────────────────────────────────────────────────────────────────────── */
+
+    const DICT_URL =
+      'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt';
+    const DICT_CACHE_KEY = 'smart-notepad.dictionary.v1';
+    const DICT_CACHE_TS_KEY = 'smart-notepad.dictionary.timestamp.v1';
+    const CACHE_MAX_AGE = 1000 * 60 * 60 * 24 * 30; // refresh monthly
+
+    const editor = document.getElementById('editor');
+    const editorWrap = document.getElementById('editor-wrap');
+    const ghost = document.getElementById('ghost');
+    const ghostWord = document.getElementById('ghost-word');
+    const dictStat = document.getElementById('dict-status');
+
+    let words = [];
+    let wordSet = new Set();
+    let suggestion = null;
+    let suggTimer = null;
+    let composing = false;
+    let lastInputWasSuggestion = false;
+    let pendingCorrection = null;
+
+    const isLetter = c => !!c && /^[A-Za-z]$/.test(c);
+    const isDigit = c => !!c && c >= '0' && c <= '9';
+
+    function normalizeWordList(raw) {
+      return raw.split(/\r?\n/)
+        .map(w => w.trim().toLowerCase())
+        .filter(w => /^[a-z]+$/.test(w) && w.length >= 2);
+    }
+
+    function saveDictionary(list) {
+      try {
+        localStorage.setItem(DICT_CACHE_KEY, list.join('\n'));
+        localStorage.setItem(DICT_CACHE_TS_KEY, String(Date.now()));
+      } catch {
+        // Storage may be blocked/full. The app still works for this session.
+      }
+    }
+
+    function loadCachedDictionary() {
+      try {
+        const raw = localStorage.getItem(DICT_CACHE_KEY);
+        const ts = Number(localStorage.getItem(DICT_CACHE_TS_KEY) || 0);
+        if (!raw || !ts || Date.now() - ts > CACHE_MAX_AGE) return false;
+        const list = normalizeWordList(raw);
+        if (!list.length) return false;
+        words = list;
+        wordSet = new Set(words);
+        dictStat.textContent = words.length.toLocaleString() + ' words (cached)';
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function loadDictionary() {
+      if (loadCachedDictionary()) return;
+      try {
+        const r = await fetch(DICT_URL, { cache: 'force-cache' });
+        if (!r.ok) throw new Error('Dictionary request failed');
+        const list = normalizeWordList(await r.text());
+        if (!list.length) throw new Error('Empty dictionary');
+
+        list.sort();
+        words = list;
+        wordSet = new Set(words);
+        saveDictionary(words);
+        dictStat.textContent = words.length.toLocaleString() + ' words loaded';
+      } catch {
+        // A compact fallback keeps the editor usable if the file is offline.
+        words = FALLBACK_WORDS.slice().sort();
+        wordSet = new Set(words);
+        dictStat.textContent = 'Offline dictionary';
+      }
+    }
+
+    const FALLBACK_WORDS = [
+      'able', 'about', 'above', 'accept', 'across', 'after', 'again', 'against', 'almost',
+      'along', 'already', 'also', 'always', 'among', 'another', 'answer', 'any', 'appear',
+      'area', 'around', 'away', 'back', 'because', 'become', 'before', 'begin', 'being',
+      'between', 'both', 'bring', 'build', 'business', 'call', 'called', 'came', 'can',
+      'cannot', 'change', 'children', 'city', 'class', 'close', 'come', 'common',
+      'company', 'complete', 'computer', 'could', 'country', 'course', 'create', 'data',
+      'day', 'different', 'does', 'done', 'down', 'during', 'each', 'early', 'easy',
+      'enough', 'even', 'every', 'example', 'experience', 'fact', 'family', 'far',
+      'feel', 'few', 'find', 'first', 'follow', 'for', 'form', 'found', 'from', 'full',
+      'game', 'gave', 'general', 'get', 'give', 'given', 'go', 'good', 'great', 'group',
+      'hand', 'happen', 'hard', 'has', 'have', 'having', 'head', 'help', 'here', 'high',
+      'home', 'house', 'how', 'however', 'important', 'include', 'information', 'inside',
+      'instead', 'interest', 'into', 'just', 'keep', 'kind', 'know', 'large', 'last',
+      'later', 'learn', 'leave', 'less', 'let', 'life', 'like', 'line', 'little', 'long',
+      'look', 'made', 'make', 'many', 'may', 'mean', 'might', 'more', 'most', 'much',
+      'must', 'name', 'need', 'never', 'next', 'night', 'number', 'often', 'once', 'only',
+      'other', 'our', 'out', 'over', 'own', 'part', 'people', 'place', 'point', 'possible',
+      'power', 'problem', 'program', 'provide', 'put', 'question', 'read', 'real',
+      'really', 'reason', 'right', 'same', 'school', 'second', 'see', 'seem', 'set',
+      'several', 'should', 'show', 'side', 'since', 'small', 'something', 'sometimes',
+      'start', 'state', 'still', 'story', 'such', 'system', 'take', 'tell', 'than',
+      'that', 'their', 'them', 'then', 'there', 'these', 'they', 'thing', 'think',
+      'this', 'those', 'though', 'three', 'through', 'time', 'today', 'together',
+      'too', 'under', 'until', 'use', 'used', 'very', 'want', 'water', 'way', 'week',
+      'well', 'went', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whole',
+      'why', 'will', 'with', 'without', 'word', 'work', 'world', 'would', 'write', 'year',
+      'yes', 'you', 'your'
+    ];
+
+    /* ── Word-frequency ranks ────────────────────────────────────────────────────
+       Words are listed in approximate frequency order (most common first).
+       Each word's rank is its position in this deduplicated list.
+       Words not present are treated as rare (rank = list length).
+       ──────────────────────────────────────────────────────────────────────────── */
+    const FREQ_RANKS = (() => {
+      const raw = `the of and to a in is it you that he was for on are with as his they at be
+this have from or one had by but not what all were we when your can said there
+use an each which she do how their if will up other about out many then them
+these so some her would make like him into time has two more write go see number
+no way could people my than first water been call who now its find long down day
+did get come made may part over new sound take only little work know place years
+live me back give most very after things our just name good man think say great
+where help through much before line right too mean old any same tell boy follow
+came want show also around form three small set put end does another well large
+often together men always door such under took never us left along while might
+next below saw something thought both few those house world going school until
+food keep children feet land side without once life enough sometimes four head
+above kind began almost page got earth need far hand high turn let move light
+country plant story sea draw late run press close night real north open seem
+white begin walk example ease paper group music mark book letter mile river car
+care second girl usual young ready ever red list feel talk bird soon body dog
+family leave song product black short class wind question happen complete ship
+area half rock order fire south problem piece told knew pass since top whole
+king space heard best hour better true during hundred five remember step early
+hold west ground interest reach fast sing listen six table travel less morning
+ten simple several vowel war lay against pattern slow center love person money
+serve appear road map rain rule pull cold voice unit power town fine drive
+certain fly fall lead dark machine note wait plan figure star box field rest
+able friend sit pair base speed act charge human cross speak solve fresh face
+test cut hard sun warm build science clean grow study learn add between own last
+father tree start city eye point play thought close asked want important land
+animals head began sea night north walk ease group mark letter river young feel
+bird body family song short wind question complete area fire south told knew
+king heard better five step hold ground listen table morning simple war against
+slow love person money appear rain rule cold voice power town certain fly lead
+dark note wait plan star rest friend sit base speed act cross speak fresh face
+cut hard warm english clean grow learn school home road real open sign body mind
+matter right south north east west city town road house room door window wall
+floor roof garden park forest lake mountain valley plain island ocean sea beach
+business state nation family group company service program issue fact idea thing
+word number point time year week month moment way result action change knowledge
+experience view opinion belief feeling behavior situation teacher student parent
+leader manager worker writer reader speaker owner friend partner judge police
+doctor nurse engineer scientist musician poet actor director producer journalist
+quickly slowly loudly quietly firmly clearly exactly particularly especially
+actually already even never always sometimes often probably certainly obviously
+good better best bad worse worst new old young large big small great little high
+low much many few more most less least long short far near same different another
+other next last every few several both either all some any no such each own
+right left open close full empty round flat straight smooth hard soft sweet cold
+warm hot light dark heavy free simple complex main major central local public
+private common general special total perfect possible important true false real
+able ready sure clear necessary certain enough next right wrong ready available
+certain actual recent similar possible whole early late strong quick simple large
+poor rich beautiful ugly clean dirty dry wet loud quiet fast slow wide narrow
+thick thin sharp dull bright dark rough gentle calm wild safe dangerous happy
+sad angry afraid worried excited surprised tired hungry thirsty sick healthy
+alive dead done gone past perfect particular special normal regular usual special`;
+      const seen = new Set();
+      const ranks = new Map();
+      raw.split(/\s+/).forEach(w => {
+        if (w && !seen.has(w)) { ranks.set(w, seen.size); seen.add(w); }
+      });
+      return ranks;
+    })();
+
+    function getFreqRank(word) {
+      const r = FREQ_RANKS.get(word.toLowerCase());
+      return r !== undefined ? r : FREQ_RANKS.size + word.length; // rare words penalised slightly by length
+    }
+
+    /* First index >= prefix. */
+    function lowerBound(prefix) {
+      let lo = 0, hi = words.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (words[mid] < prefix) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    }
+
+    /* Current alphabetic word at the caret. */
+    function wordAt() {
+      const pos = editor.selectionStart;
+      const before = editor.value.slice(0, pos);
+      const m = before.match(/[A-Za-z]+$/);
+      if (!m) return { word: '', start: pos, end: pos };
+      return { word: m[0], start: pos - m[0].length, end: pos };
+    }
+
+    /* Most-frequent valid continuation under the < 2× length rule. */
+    function findCompletion(prefix) {
+      if (prefix.length < 2 || !words.length) return null;
+      const cap = prefix.length * 2;
+      let best = null;
+      let bestRank = Infinity;
+
+      for (let i = lowerBound(prefix), scanned = 0;
+        i < words.length && scanned < 1000;
+        i++, scanned++) {
+        const w = words[i];
+        if (!w.startsWith(prefix)) break;
+        if (w !== prefix && w.length < cap) {
+          const rank = getFreqRank(w);
+          if (rank < bestRank) { bestRank = rank; best = w; }
+        }
+      }
+      return best;
+    }
+
+    /* Damerau-Levenshtein: insertion/deletion/substitution/transposition. */
+    function dlev(a, b, limit = 3) {
+      if (Math.abs(a.length - b.length) > limit) return limit + 1;
+
+      let prev2 = null;
+      let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+
+      for (let i = 1; i <= a.length; i++) {
+        const cur = [i];
+        let rowMin = cur[0];
+
+        for (let j = 1; j <= b.length; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          let value = Math.min(
+            prev[j] + 1,
+            cur[j - 1] + 1,
+            prev[j - 1] + cost
+          );
+
+          if (i > 1 && j > 1 &&
+            a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+            value = Math.min(value, prev2[j - 2] + 1);
+          }
+
+          cur[j] = value;
+          rowMin = Math.min(rowMin, value);
+        }
+
+        if (rowMin > limit) return limit + 1;
+        prev2 = prev;
+        prev = cur;
+      }
+      return prev[b.length];
+    }
+
+    /* Correction mode: edit distance acts as a filter; frequency decides the winner.
+       Among all candidates within the allowed edit distance, we return the one with
+       the highest frequency in normal English usage (lowest FREQ_RANKS index).      */
+    function findCorrection(input) {
+      if (input.length < 3 || !words.length) return null;
+
+      const maxD = input.length <= 5 ? 1 : 2;
+      const minL = Math.max(2, input.length - maxD);
+      const maxL = Math.max(minL, Math.ceil(input.length * 1.5));
+
+      let best = null;
+      let bestD = Infinity;
+      let bestFreq = Infinity;
+
+      const inspect = (start, maxScan, requireFirst) => {
+        let scanned = 0;
+        for (let i = start; i < words.length && scanned < maxScan; i++, scanned++) {
+          const w = words[i];
+          if (requireFirst && w[0] !== input[0]) {
+            if (w[0] > input[0]) break;
+            continue;
+          }
+          if (w.length < minL || w.length > maxL) continue;
+          if (w === input) continue;
+
+          const d = dlev(input, w, maxD);
+          if (d > maxD) continue;
+
+          const freq = getFreqRank(w);
+          // Prefer shorter edit distance first; break ties with frequency rank.
+          if (d < bestD || (d === bestD && freq < bestFreq)) {
+            bestD = d; bestFreq = freq; best = w;
+            // Early exit: a distance-1 match for a very common word is hard to beat.
+            if (d === 1 && freq < 80) return true;
+          }
+        }
+        return false;
+      };
+
+      // Prefer words beginning with the same first letter.
+      const sameFirst = lowerBound(input[0]);
+      if (inspect(sameFirst, 12000, true)) return best;
+
+      // Bounded fallback catches transpositions like "hte" → "the".
+      let start = lowerBound(input);
+      start = Math.max(0, start - 6000);
+      inspect(start, 12000, false);
+
+      return best;
+    }
+
+    function positionGhost() {
+      if (!suggestion) return;
+
+      const pos = suggestion?.target?.end ?? editor.selectionStart;
+      const before = editor.value.slice(0, pos);
+      const lastNewline = before.lastIndexOf('\n');
+      const lineText = before.slice(lastNewline + 1);
+
+      const cs = getComputedStyle(editor);
+      const canvas = positionGhost.canvas || (positionGhost.canvas = document.createElement('canvas'));
+      const ctx = canvas.getContext('2d');
+      ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const textWidth = ctx.measureText(lineText).width;
+
+      const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.6;
+      const padLeft = parseFloat(cs.paddingLeft) || 0;
+      const padTop = parseFloat(cs.paddingTop) || 0;
+
+      const lineIndex = (before.match(/\n/g) || []).length;
+      ghost.style.left = `${padLeft + textWidth - editor.scrollLeft}px`;
+      ghost.style.top = `${padTop + lineIndex * lineHeight - editor.scrollTop}px`;
+      ghost.style.padding = '0';
+      ghostWord.style.font = 'inherit';
+    }
+
+    function showSuggestion(text, mode, target = null) {
+      suggestion = { text, mode, target };
+      if (mode === 'complete' && target) {
+        ghostWord.textContent = text.slice(target.word.length);
+      } else {
+        ghostWord.textContent = text;
+      }
+      ghostWord.className = mode === 'correct' ? 'correct' : '';
+      ghost.classList.remove('hidden');
+      requestAnimationFrame(positionGhost);
+    }
+
+    function hideSuggestion() {
+      suggestion = null;
+      ghost.classList.add('hidden');
+    }
+
+    function updateSuggestion() {
+      if (composing || !words.length) return;
+
+      const { word } = wordAt();
+      const lower = word.toLowerCase();
+
+      if (lower.length < 2) {
+        hideSuggestion();
+        return;
+      }
+
+      const completion = findCompletion(lower);
+      if (completion) {
+        showSuggestion(completion, 'complete', {
+          start: wordAt().start, end: wordAt().end, word
+        });
+        return;
+      }
+
+      // Word is already valid — don't autocorrect it.
+      if (wordSet.has(lower)) {
+        hideSuggestion();
+        return;
+      }
+
+      const correction = findCorrection(lower);
+      if (correction && correction !== lower) {
+        showSuggestion(correction, 'correct');
+        return;
+      }
+
+      hideSuggestion();
+    }
+
+    /* Check the word immediately before a newly typed space. */
+    function correctPreviousWord() {
+      const pos = editor.selectionStart;
+      const beforeSpace = editor.value.slice(0, Math.max(0, pos - 1));
+      const match = beforeSpace.match(/[A-Za-z]+$/);
+      if (!match) return false;
+
+      const typed = match[0];
+      if (typed.length < 3) return false;
+
+      // Word is already valid — don't autocorrect it.
+      if (wordSet.has(typed.toLowerCase())) return false;
+
+      const correction = findCorrection(typed.toLowerCase());
+      if (!correction || correction === typed.toLowerCase()) return false;
+
+      const start = pos - 1 - typed.length;
+      showSuggestion(correction, 'correct', {
+        start,
+        end: start + typed.length,
+        word: typed
+      });
+      return true;
+    }
+
+    /* Replace/extend only the word currently under the caret. */
+    function acceptSuggestion() {
+      if (!suggestion || composing) return false;
+
+      const current = wordAt();
+      const target = suggestion.target || { start: current.start, end: current.end, word: current.word };
+      const word = target.word;
+      const start = target.start;
+      const end = target.end;
+      if (!word) {
+        hideSuggestion();
+        return false;
+      }
+
+      let replacement = suggestion.text;
+      if (word[0] && word[0] === word[0].toUpperCase()) {
+        replacement = replacement[0].toUpperCase() + replacement.slice(1);
+      }
+
+      const oldText = editor.value;
+      let nextCaret;
+
+      if (suggestion.mode === 'complete') {
+        const tail = replacement.slice(word.length);
+        editor.value = oldText.slice(0, end) + tail + oldText.slice(end);
+        nextCaret = end + tail.length;
+      } else {
+        editor.value = oldText.slice(0, start) + replacement + oldText.slice(end);
+        nextCaret = start + replacement.length;
+        // A correction triggered by Space keeps the existing following space.
+        if (end < oldText.length && /\s/.test(oldText[end])) nextCaret++;
+      }
+
+      editor.selectionStart = editor.selectionEnd = nextCaret;
+      lastInputWasSuggestion = true;
+      hideSuggestion();
+      return true;
+    }
+
+    /* Sentence check based on the text immediately before the caret. */
+    function shouldCapitalizeAt(pos) {
+      const before = editor.value.slice(0, pos);
+      if (!before.trim()) return true;
+
+      // Skip whitespace after a sentence-ending period.
+      const trimmed = before.replace(/\s+$/, '');
+      if (!trimmed) return true;
+
+      const last = trimmed[trimmed.length - 1];
+      if (last === '\n') return true;
+      if (last !== '.') return false;
+
+      // A numeric decimal such as 3.14 is not a sentence boundary.
+      const dot = trimmed.lastIndexOf('.');
+      const left = dot > 0 ? trimmed[dot - 1] : '';
+      return !isDigit(left);
+    }
+
+    function mutateText(text, pos) {
+      let nextText = text;
+      let nextPos = pos;
+
+      // Remove spaces immediately before a sentence period.
+      const dotIndex = nextPos - 1;
+      if (dotIndex >= 0 && nextText[dotIndex] === '.') {
+        let p = dotIndex - 1;
+        while (p >= 0 && nextText[p] === ' ') p--;
+
+        const decimal = p >= 0 && isDigit(nextText[p]);
+        if (!decimal && p < dotIndex - 1) {
+          nextText = nextText.slice(0, p + 1) + '.' + nextText.slice(dotIndex + 1);
+          nextPos = p + 2;
+        }
+      }
+
+      // Insert a space after a sentence period when text continues immediately.
+      const justTypedIndex = nextPos - 1;
+      if (justTypedIndex > 0) {
+        const prev = nextText[justTypedIndex - 1];
+        const justTyped = nextText[justTypedIndex];
+
+        if (prev === '.' && justTyped !== ' ' && justTyped !== '\n' && justTyped !== '.') {
+          const beforeDot = justTypedIndex > 1 ? nextText[justTypedIndex - 2] : '';
+          const decimal = isDigit(beforeDot) && isDigit(justTyped);
+          if (!decimal) {
+            nextText =
+              nextText.slice(0, justTypedIndex) + ' ' + nextText.slice(justTypedIndex);
+            nextPos++;
+          }
+        }
+      }
+
+      return { text: nextText, pos: nextPos };
+    }
+
+    editor.addEventListener('compositionstart', () => {
+      composing = true;
+      hideSuggestion();
+    });
+    editor.addEventListener('compositionend', () => {
+      composing = false;
+      queueSuggestionUpdate();
+    });
+
+    editor.addEventListener('input', event => {
+      if (composing) return;
+
+      let text = editor.value;
+      let pos = editor.selectionStart;
+      const data = event.data || '';
+
+      // Auto-cap the first letter of a new sentence.
+      if (data && data.length === 1 && /^[a-z]$/.test(data)) {
+        const inserted = pos - 1;
+        if (inserted >= 0 && shouldCapitalizeAt(inserted)) {
+          text = text.slice(0, inserted) + data.toUpperCase() + text.slice(pos);
+          pos = inserted + 1;
+        }
+      }
+
+      const mutated = mutateText(text, pos);
+      if (mutated.text !== editor.value || mutated.pos !== editor.selectionStart) {
+        editor.value = mutated.text;
+        editor.selectionStart = editor.selectionEnd = mutated.pos;
+        pos = mutated.pos;
+      }
+
+      // A typed space ends completion mode and immediately checks/corrects the
+      // word that was just finished.
+      if (data === ' ') {
+        hideSuggestion();
+        // Once the word is finished with Space, automatically apply a
+        // correction when one is found. The trailing space remains in place.
+        if (correctPreviousWord()) acceptSuggestion();
+        return;
+      }
+
+      if (data === '\n' || data === '\r') {
+        hideSuggestion();
+        return;
+      }
+
+      queueSuggestionUpdate();
+    });
+
+    function queueSuggestionUpdate() {
+      clearTimeout(suggTimer);
+      suggTimer = setTimeout(updateSuggestion, 80);
+    }
+
+    editor.addEventListener('keydown', event => {
+      if (event.key === 'Tab' && suggestion) {
+        event.preventDefault();
+        acceptSuggestion();
+        return;
+      }
+
+      // Escape dismisses the suggestion without changing the text.
+      if (event.key === 'Escape' && suggestion) {
+        event.preventDefault();
+        hideSuggestion();
+      }
+    });
+
+    ghostWord.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      acceptSuggestion();
+    });
+
+    editor.addEventListener('scroll', () => {
+      if (suggestion) requestAnimationFrame(positionGhost);
+    });
+
+    window.addEventListener('resize', () => {
+      if (suggestion) requestAnimationFrame(positionGhost);
+    });
+
+    /* On touch/mobile: tapping in the editor accepts the visible suggestion. */
+    editor.addEventListener('pointerdown', event => {
+      if (event.pointerType === 'touch' && suggestion) {
+        if (acceptSuggestion()) setTimeout(() => editor.focus(), 0);
+      }
+    }, { passive: true });
+
+    /* Refresh the sentence-capitalization state after cursor moves/pastes. */
+    editor.addEventListener('mouseup', queueSuggestionUpdate);
+    editor.addEventListener('keyup', event => {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+        queueSuggestionUpdate();
+      }
+    });
+
+    /* ── Word counter ───────────────────────────────────────────────────────── */
+    const wordCountEl = document.getElementById('word-count');
+    function updateWordCount() {
+      const text = editor.value.trim();
+      const words = text ? text.match(/\S+/g).length : 0;
+      const chars = editor.value.length;
+      wordCountEl.textContent = words === 1
+        ? `1 word · ${chars} chars`
+        : `${words.toLocaleString()} words · ${chars.toLocaleString()} chars`;
+    }
+    editor.addEventListener('input', updateWordCount);
+
+    loadDictionary();
+  </script>
+</body>
+
+</html>

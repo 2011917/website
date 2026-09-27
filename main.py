@@ -27,6 +27,10 @@ def contact():
     # If it's a GET request, just show the HTML form page
     return render_template('contact.html')
 
+@app.route("/notepad")
+def uploader():
+    return render_template('notepad.html')
+
 
 
 if __name__ == '__main__':
