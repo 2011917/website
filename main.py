@@ -11,21 +11,10 @@ def home():
     return render_template('index.html', user_name=current_visitor)
 
 # 2. Contact Route - Handling both viewing the page (GET) and submitting the form (POST)
-@app.route('/contact', methods=['GET', 'POST'])
-def contact():
-    if request.method == 'POST':
-        # Grab the text entered by the user in the HTML form
-        submitted_text = request.form.get('user_message')
-        
-        # In a real app, you would save this to a database. 
-        # For now, we'll just print it to the terminal console.
-        print(f"--- NEW MESSAGE RECEIVED: {submitted_text} ---")
-        
-        # Redirect the user back to the home page after submitting
-        return redirect(url_for('home'))
-        
-    # If it's a GET request, just show the HTML form page
-    return render_template('contact.html')
+@app.route('/moon', methods=['GET', 'POST'])
+def moon():
+    return render_template('moon.html')
+
 
 @app.route("/notepad")
 def uploader():

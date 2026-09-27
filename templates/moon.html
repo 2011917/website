@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Moon Finder AR</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #060a08;
+            --surface: #0b110d;
+            --border: #1a2e22;
+            --border-bright: #2b5c3e;
+            --text: #d9f5e6;
+            --text-dim: #7fa593;
+            --green: #39ff8a;
+            --green-bright: #7dffb0;
+            --green-dim: #1c7a48;
+            --danger: #ff8080;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+            color: var(--text);
+        }
+
+        #camera {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            background: var(--surface);
+        }
+
+        #overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        #startScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            background:
+                radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57, 255, 138, 0.1), transparent),
+                var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            box-sizing: border-box;
+            padding-top: calc(24px + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+
+        #startScreen h1 {
+            font-size: 1.6em;
+            margin-bottom: 0.2em;
+            color: var(--text);
+            text-shadow: 0 0 24px rgba(57, 255, 138, 0.25);
+            letter-spacing: -0.01em;
+        }
+
+        #startScreen p {
+            color: var(--text-dim);
+            max-width: 340px;
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+
+        #startBtn {
+            margin-top: 24px;
+            background: var(--green);
+            color: #04140b;
+            border: 1px solid var(--green);
+            padding: 14px 32px;
+            border-radius: 0;
+            font-size: 1.05em;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        #startBtn:hover {
+            background: var(--green-bright);
+            border-color: var(--green-bright);
+        }
+
+        #startBtn:active {
+            transform: scale(0.97);
+            box-shadow: 0 0 18px rgba(57, 255, 138, 0.4);
+        }
+
+        #status {
+            position: fixed;
+            top: calc(12px + env(safe-area-inset-top, 0px));
+            left: 12px;
+            right: 12px;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            font-size: 0.75em;
+            color: var(--text);
+        }
+
+        .pill {
+            background: rgba(6, 10, 8, 0.7);
+            border: 1px solid var(--border-bright);
+            backdrop-filter: blur(6px);
+            padding: 6px 12px;
+            border-radius: 0;
+            line-height: 1.4;
+        }
+
+        #info {
+            position: fixed;
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            left: 12px;
+            right: 12px;
+            z-index: 5;
+            background: rgba(6, 10, 8, 0.75);
+            border: 1px solid var(--border-bright);
+            backdrop-filter: blur(8px);
+            border-radius: 0;
+            padding: 14px 16px;
+            color: var(--text);
+            font-size: 0.85em;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+
+        #info b {
+            color: var(--green);
+        }
+
+        #compassStrip {
+            position: fixed;
+            top: calc(56px + env(safe-area-inset-top, 0px));
+            left: 0;
+            right: 0;
+            height: 32px;
+            z-index: 5;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        #compassTrack {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            height: 100%;
+            display: flex;
+            white-space: nowrap;
+            transform: translateX(0);
+        }
+
+        .tick {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            color: rgba(217, 245, 230, 0.45);
+            font-size: 0.75em;
+        }
+
+        .tick.card {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        #centerMark {
+            position: fixed;
+            top: calc(56px + env(safe-area-inset-top, 0px));
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 32px;
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(57, 255, 138, 0.6);
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        #moonMarker {
+            position: fixed;
+            z-index: 4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: left 0.15s linear, top 0.15s linear;
+            pointer-events: none;
+        }
+
+        #moonEmoji {
+            font-size: 2.6em;
+            filter: drop-shadow(0 0 10px rgba(57, 255, 138, 0.7));
+        }
+
+        #moonLabel {
+            margin-top: 4px;
+            background: rgba(6, 10, 8, 0.75);
+            border: 1px solid var(--border-bright);
+            color: var(--text);
+            padding: 3px 9px;
+            border-radius: 0;
+            font-size: 0.7em;
+            white-space: nowrap;
+        }
+
+        #belowIndicator,
+        #aboveIndicator {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            background: rgba(6, 10, 8, 0.75);
+            border: 1px solid var(--border-bright);
+            color: var(--green);
+            padding: 6px 14px;
+            border-radius: 0;
+            font-size: 0.8em;
+            display: none;
+        }
+
+        #belowIndicator {
+            bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+        }
+
+        #aboveIndicator {
+            top: calc(96px + env(safe-area-inset-top, 0px));
+        }
+
+        #errorBox {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            background: rgba(6, 10, 8, 0.92);
+            color: var(--text);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            box-sizing: border-box;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="startScreen">
+        <h1>🌙 Moon Finder</h1>
+        <p>Point your phone at the sky and this app will show you exactly where the moon is right now, using your
+            camera, compass, and location.</p>
+        <p>You'll be asked to allow camera, motion/orientation, and location access.</p>
+        <button id="startBtn">Start</button>
+    </div>
+
+    <div id="errorBox"></div>
+
+    <video id="camera" autoplay playsinline muted></video>
+
+    <div id="status" style="display:none">
+        <div class="pill" id="locPill">📍 locating…</div>
+        <div class="pill" id="headingPill">🧭 —</div>
+    </div>
+
+    <div id="compassStrip" style="display:none">
+        <div id="compassTrack"></div>
+    </div>
+    <div id="centerMark" style="display:none"></div>
+
+    <div id="aboveIndicator">▲ moon is above, look up</div>
+    <div id="moonMarker" style="display:none">
+        <div id="moonEmoji">🌕</div>
+        <div id="moonLabel">Moon</div>
+    </div>
+    <div id="belowIndicator">▼ moon is below the horizon</div>
+
+    <div id="info" style="display:none"></div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            // ---------- Astronomy: Moon position (topocentric azimuth/altitude) ----------
+            // Based on well-known low-precision algorithms (Astronomy on the Personal
+            // Computer / Jean Meeus, as popularized in the SunCalc library).
+
+            const PI = Math.PI, rad = PI / 180;
+            const dayMs = 1000 * 60 * 60 * 24, J1970 = 2440588, J2000 = 2451545;
+
+            function toJulian(date) { return date.valueOf() / dayMs - 0.5 + J1970; }
+            function toDays(date) { return toJulian(date) - J2000; }
+
+            function rightAscension(l, b) {
+                return Math.atan2(Math.sin(l) * Math.cos(rad * 23.4397) - Math.tan(b) * Math.sin(rad * 23.4397), Math.cos(l));
+            }
+            function declination(l, b) {
+                return Math.asin(Math.sin(b) * Math.cos(rad * 23.4397) + Math.cos(b) * Math.sin(rad * 23.4397) * Math.sin(l));
+            }
+            function siderealTime(d, lw) { return rad * (280.16 + 360.9856235 * d) - lw; }
+            function astroRefraction(h) {
+                if (h < 0) h = 0;
+                return 0.0002967 / Math.tan(h + 0.00312536 / (h + 0.08901179));
+            }
+
+            function moonCoords(d) {
+                const L = rad * (218.316 + 13.176396 * d);
+                const M = rad * (134.963 + 13.064993 * d);
+                const F = rad * (93.272 + 13.229350 * d);
+                const l = L + rad * 6.289 * Math.sin(M);
+                const b = rad * 5.128 * Math.sin(F);
+                const dt = 385001 - 20905 * Math.cos(M);
+                return { ra: rightAscension(l, b), dec: declination(l, b), dist: dt };
+            }
+
+            function altitude(H, phi, dec) {
+                return Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H));
+            }
+            function azimuthCalc(H, phi, dec) {
+                return Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
+            }
+
+            function getMoonPosition(date, lat, lng) {
+                const lw = rad * -lng, phi = rad * lat, d = toDays(date);
+                const c = moonCoords(d);
+                const H = siderealTime(d, lw) - c.ra;
+                let h = altitude(H, phi, c.dec);
+                h = h + astroRefraction(h); // altitude correction for atmospheric refraction
+                return {
+                    azimuth: azimuthCalc(H, phi, c.dec) + PI, // radians, 0 = north, clockwise (compass convention)
+                    altitude: h,                              // radians above horizon
+                    distance: c.dist
+                };
+            }
+
+            // Sun's ecliptic coordinates (low-precision), used for illumination/phase calc
+            function sunCoords(d) {
+                const M = rad * (357.5291 + 0.98560028 * d);
+                const C = rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+                const P = rad * 102.9372; // argument of perihelion
+                const L = M + C + P + PI;
+                return { ra: rightAscension(L, 0), dec: declination(L, 0) };
+            }
+
+            function getMoonIllumination(date) {
+                const d = toDays(date);
+                const s = sunCoords(d);
+                const m = moonCoords(d);
+                const sdist = 149598000; // km, 1 AU
+                const phi = Math.acos(
+                    Math.sin(s.dec) * Math.sin(m.dec) + Math.cos(s.dec) * Math.cos(m.dec) * Math.cos(s.ra - m.ra)
+                );
+                const inc = Math.atan2(sdist * Math.sin(phi), m.dist - sdist * Math.cos(phi));
+                const angle = Math.atan2(
+                    Math.cos(s.dec) * Math.sin(s.ra - m.ra),
+                    Math.sin(s.dec) * Math.cos(m.dec) - Math.cos(s.dec) * Math.sin(m.dec) * Math.cos(s.ra - m.ra)
+                );
+                const fraction = (1 + Math.cos(inc)) / 2;
+                const phaseVal = 0.5 + 0.5 * inc * (angle < 0 ? -1 : 1) / PI;
+                return { fraction: fraction, phase: ((phaseVal % 1) + 1) % 1 };
+            }
+
+            function moonPhaseName(phase) {
+                const names = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+                    "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
+                const idx = Math.round(phase * 8) % 8;
+                return names[idx];
+            }
+            function moonEmoji(phase) {
+                const emojis = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+                const idx = Math.round(phase * 8) % 8;
+                return emojis[idx];
+            }
+
+            // ---------- App state ----------
+            let lat = null, lon = null;
+            let heading = null;   // degrees, 0 = north, clockwise
+            let pitch = null;     // degrees, device tilt (0 = pointing at horizon)
+            let usingAbsolute = false;
+
+            const cameraEl = document.getElementById('camera');
+            const statusEl = document.getElementById('status');
+            const locPill = document.getElementById('locPill');
+            const headingPill = document.getElementById('headingPill');
+            const infoEl = document.getElementById('info');
+            const moonMarker = document.getElementById('moonMarker');
+            const moonEmojiEl = document.getElementById('moonEmoji');
+            const moonLabelEl = document.getElementById('moonLabel');
+            const belowIndicator = document.getElementById('belowIndicator');
+            const aboveIndicator = document.getElementById('aboveIndicator');
+            const compassTrack = document.getElementById('compassTrack');
+            const compassStrip = document.getElementById('compassStrip');
+            const centerMark = document.getElementById('centerMark');
+            const errorBox = document.getElementById('errorBox');
+
+            // Build compass strip ticks (0-359, one per degree grouped by 10)
+            const dirNames = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
+            let tickHtml = '';
+            for (let deg = -360; deg <= 720; deg += 10) {
+                const norm = ((deg % 360) + 360) % 360;
+                const isCard = dirNames.hasOwnProperty(norm);
+                tickHtml += `<div class="tick${isCard ? ' card' : ''}" data-deg="${deg}">${isCard ? dirNames[norm] : norm}</div>`;
+            }
+            compassTrack.innerHTML = tickHtml;
+
+            function showError(msg) {
+                errorBox.style.display = 'flex';
+                errorBox.innerHTML = msg;
+            }
+
+            // ---------- Camera ----------
+            async function startCamera() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: 'environment' } },
+                        audio: false
+                    });
+                    cameraEl.srcObject = stream;
+                } catch (e) {
+                    // Continue without camera — still show compass/moon overlay on black bg
+                    console.warn('Camera unavailable', e);
+                }
+            }
+
+            // ---------- Geolocation ----------
+            function startGeolocation() {
+                if (!('geolocation' in navigator)) {
+                    locPill.textContent = '📍 no GPS';
+                    return;
+                }
+                navigator.geolocation.watchPosition(
+                    (pos) => {
+                        lat = pos.coords.latitude;
+                        lon = pos.coords.longitude;
+                        locPill.textContent = `📍 ${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+                    },
+                    (err) => {
+                        locPill.textContent = '📍 location denied';
+                        console.warn(err);
+                    },
+                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+                );
+            }
+
+            // ---------- Orientation ----------
+            // Tilt-compensated compass heading from alpha/beta/gamma. Plain "360 - alpha" only
+            // gives a correct compass reading when the device is held perfectly vertical; since
+            // this app is used tilted up at varying pitch, we need the full tilt-compensated
+            // formula (standard W3C-deviceorientation compass heading calculation).
+            function tiltCompensatedHeading(alpha, beta, gamma) {
+                const _x = beta * rad, _y = gamma * rad, _z = alpha * rad;
+                const cX = Math.cos(_x), cY = Math.cos(_y), cZ = Math.cos(_z);
+                const sX = Math.sin(_x), sY = Math.sin(_y), sZ = Math.sin(_z);
+                const Vx = -cZ * sY - sZ * sX * cY;
+                const Vy = -sZ * sY + cZ * sX * cY;
+                let heading = Math.atan2(Vx, Vy) * 180 / PI;
+                if (heading < 0) heading += 360;
+                return heading;
+            }
+
+            function handleOrientation(e) {
+                let h = null;
+                if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+                    // iOS: already 0=N, clockwise, compensated
+                    h = e.webkitCompassHeading;
+                    usingAbsolute = true;
+                } else if (e.alpha !== null && e.beta !== null && e.gamma !== null) {
+                    // Android/others: use the tilt-compensated formula so heading stays accurate
+                    // while the phone is tilted up toward the sky, not just held vertical.
+                    h = tiltCompensatedHeading(e.alpha, e.beta, e.gamma);
+                    usingAbsolute = !!e.absolute;
+                }
+                if (h !== null) {
+                    heading = ((h % 360) + 360) % 360;
+                }
+                // Pitch: beta is front-back tilt (-180..180). When phone is held vertically
+                // (portrait, screen facing user, typical "looking through it" pose), beta near 90
+                // means pointing at horizon. We convert so 0 = horizon, positive = up.
+                if (e.beta !== null) {
+                    pitch = 90 - e.beta;
+                    // clamp
+                    if (pitch > 90) pitch = 90;
+                    if (pitch < -90) pitch = -90;
+                }
+            }
+
+            function requestOrientationPermission() {
+                if (typeof DeviceOrientationEvent !== 'undefined' &&
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    return DeviceOrientationEvent.requestPermission().then(state => {
+                        if (state === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation, true);
+                            return true;
+                        }
+                        return false;
+                    });
+                } else if ('DeviceOrientationEvent' in window) {
+                    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                    window.addEventListener('deviceorientation', handleOrientation, true);
+                    return Promise.resolve(true);
+                }
+                return Promise.resolve(false);
+            }
+
+            // ---------- Render loop ----------
+            const FOV_H = 60; // approx horizontal field of view in degrees for typical phone camera
+            const FOV_V = 75; // approx vertical field of view
+
+            function angleDiff(a, b) {
+                // shortest signed difference a-b in degrees, result in (-180,180]
+                let d = (a - b) % 360;
+                if (d > 180) d -= 360;
+                if (d < -180) d += 360;
+                return d;
+            }
+
+            function render() {
+                requestAnimationFrame(render);
+
+                // Compass strip position: center shows current heading
+                if (heading !== null) {
+                    headingPill.textContent = `🧭 ${Math.round(heading)}°${usingAbsolute ? '' : ' (relative)'}`;
+                    // shift track so that the tick matching current heading sits under center mark.
+                    // Ticks are laid out every 10deg starting at tickStartDeg (-360), 60px each (6px/deg),
+                    // so the pixel position of degree `d` pre-transform is (d - tickStartDeg) * pxPerDeg.
+                    const pxPerDeg = 6; // 60px per 10deg tick => 6px/deg
+                    const tickStartDeg = -360;
+                    const offset = -(heading - tickStartDeg) * pxPerDeg;
+                    compassTrack.style.transform = `translateX(${offset}px)`;
+                }
+
+                if (lat === null || lon === null) return;
+
+                const now = new Date();
+                const moonPos = getMoonPosition(now, lat, lon);
+                const moonAzDeg = (moonPos.azimuth * 180 / PI) % 360;
+                const moonAltDeg = moonPos.altitude * 180 / PI;
+                const illum = getMoonIllumination(now);
+
+                infoEl.innerHTML =
+                    `${moonEmoji(illum.phase)} <b>${moonPhaseName(illum.phase)}</b> · ${Math.round(illum.fraction * 100)}% illuminated<br>` +
+                    `Azimuth: <b>${moonAzDeg.toFixed(1)}°</b> &nbsp; Altitude: <b>${moonAltDeg.toFixed(1)}°</b>` +
+                    (moonAltDeg < 0 ? '<br><span style="color:var(--danger)">Below horizon — not currently visible</span>' : '');
+
+                if (heading === null) return;
+
+                const azDiff = angleDiff(moonAzDeg, heading); // how far right(+)/left(-) of where we're facing
+
+                if (Math.abs(azDiff) <= FOV_H / 2 && pitch !== null && Math.abs(moonAltDeg - pitch) <= FOV_V / 2) {
+                    // Moon within view — position marker
+                    const xFrac = 0.5 + (azDiff / FOV_H);
+                    const altDiff = moonAltDeg - pitch; // positive = moon above where we're pointing
+                    const yFrac = 0.5 - (altDiff / FOV_V);
+                    moonMarker.style.left = `${xFrac * 100}%`;
+                    moonMarker.style.top = `${yFrac * 100}%`;
+                    moonMarker.style.transform = 'translate(-50%, -50%)';
+                    moonMarker.style.display = 'flex';
+                    belowIndicator.style.display = moonAltDeg < 0 ? 'block' : 'none';
+                    aboveIndicator.style.display = 'none';
+                    moonEmojiEl.textContent = moonEmoji(illum.phase);
+                } else {
+                    moonMarker.style.display = 'none';
+                    const facingRoughlyRight = Math.abs(azDiff) < 45;
+                    if (moonAltDeg < 0) {
+                        belowIndicator.textContent = '▼ moon is below the horizon';
+                        belowIndicator.style.display = 'block';
+                        aboveIndicator.style.display = 'none';
+                    } else if (facingRoughlyRight && pitch !== null && (moonAltDeg - pitch) > FOV_V / 2) {
+                        aboveIndicator.style.display = 'block';
+                        belowIndicator.style.display = 'none';
+                    } else if (facingRoughlyRight && pitch !== null && (pitch - moonAltDeg) > FOV_V / 2) {
+                        belowIndicator.textContent = '▼ look down';
+                        belowIndicator.style.display = 'block';
+                        aboveIndicator.style.display = 'none';
+                    } else {
+                        belowIndicator.style.display = 'none';
+                        aboveIndicator.style.display = 'none';
+                    }
+                }
+            }
+
+            // ---------- Start flow ----------
+            document.getElementById('startBtn').addEventListener('click', async () => {
+                document.getElementById('startScreen').style.display = 'none';
+
+                await startCamera();
+                startGeolocation();
+
+                const gotOrientation = await requestOrientationPermission();
+                if (!gotOrientation) {
+                    showError('Compass/gyroscope access was not granted. This app needs device orientation to point you toward the moon. Please reload and allow motion & orientation access, or check your browser settings.');
+                }
+
+                statusEl.style.display = 'flex';
+                compassStrip.style.display = 'block';
+                centerMark.style.display = 'block';
+                infoEl.style.display = 'block';
+
+                requestAnimationFrame(render);
+            });
+
+            // If permission API doesn't exist (most non-iOS browsers), also try attaching
+            // listeners eagerly so heading works even before any gesture, as a fallback.
+            if (!(typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function')) {
+                window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+        })();
+    </script>
+
+</body>
+
+</html>
