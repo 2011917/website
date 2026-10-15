@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Remote Desktop Control — Showcase</title>
+    <style>
+        :root {
+            --bg: #060a08;
+            --bg-panel: #0b110d;
+            --border: #1a2e22;
+            --border-bright: #2b5c3e;
+            --text: #d9f5e6;
+            --text-dim: #7fa593;
+            --green: #39ff8a;
+            --green-bright: #7dffb0;
+            --green-dim: #1c7a48;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57, 255, 138, 0.08), transparent), var(--bg);
+            color: var(--text);
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 3rem 1.5rem 5rem;
+            line-height: 1.6;
+        }
+
+        .wrap {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 900px;
+            margin: 0 auto 2.5rem;
+            padding-bottom: 1.1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo .mark {
+            width: 22px;
+            height: 22px;
+            background: var(--green);
+            box-shadow: 0 0 12px rgba(57, 255, 138, 0.5);
+        }
+
+        .topbar nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.87rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .topbar nav a:hover {
+            color: var(--green);
+        }
+
+        .topbar nav svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 1.5rem;
+            text-shadow: 0 0 24px rgba(57, 255, 138, 0.25);
+        }
+
+        h2 {
+            color: var(--green);
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+            margin-top: 2rem;
+        }
+
+        .readme {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 1.5rem 1.8rem;
+        }
+
+        .readme p,
+        .readme li {
+            color: var(--text-dim);
+            font-size: 0.92rem;
+        }
+
+        .readme code {
+            color: var(--green);
+            background: rgba(57, 255, 138, 0.05);
+            padding: 0.1rem 0.35rem;
+        }
+
+        .readme .disclaimer {
+            border-left: 2px solid var(--green-dim);
+            padding-left: 1rem;
+            margin-top: 1rem;
+        }
+
+        pre {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+            overflow-x: auto;
+            font-size: 0.82rem;
+            color: var(--green-bright);
+            margin-top: 2rem;
+        }
+
+        pre code {
+            white-space: pre;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <a href="#" class="logo"><span class="mark"></span>IKVYN</a>
+        <nav>
+            <a href="https://github.com/2011917" target="_blank" rel="noopener">
+                <svg viewBox="0 0 16 16">
+                    <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                GitHub
+            </a>
+        </nav>
+    </div>
+    <div class="wrap">
+        <h1>Remote Desktop Control</h1>
+
+        <div class="readme">
+            <p>A PowerShell script that turns your Windows laptop into a simple remote desktop server, controlled from
+                any phone/browser on the same network.</p>
+
+            <h2>Features</h2>
+            <ul>
+                <li>View live screen (auto-refreshes every 2s)</li>
+                <li>Left click and right click</li>
+                <li>Type text (sent with a delay between characters)</li>
+            </ul>
+
+            <h2>Requirements</h2>
+            <ul>
+                <li>Windows with PowerShell</li>
+                <li>Phone/device on the same Wi-Fi network</li>
+            </ul>
+
+            <h2>Setup</h2>
+            <ul>
+                <li>Download <code>bloothout.ps1</code>.</li>
+                <li>Right-click the file and select "Run with PowerShell" (or run from a terminal).</li>
+                <li>If prompted about execution policy:
+                    <code>powershell -ExecutionPolicy Bypass -File bloothout.ps1</code>
+                </li>
+                <li>Note the IP/URL printed in the console.</li>
+                <li>Open that URL in your phone's browser.</li>
+            </ul>
+
+            <h2>Usage</h2>
+            <ul>
+                <li>Tap the screen image to click.</li>
+                <li>Toggle "Right-Click" before tapping to right-click instead.</li>
+                <li>Type in the text box and press Enter to send text to the laptop.</li>
+            </ul>
+
+            <h2>Disclaimer</h2>
+            <div class="disclaimer">
+                <p>This is a random hobby utility made for fun, with no guarantees of any kind. Provided "as is," with
+                    no warranty, express or implied.</p>
+                <p>Use only on your own devices and network. This script gives full mouse/keyboard control and screen
+                    access to anyone who can reach the port — do not expose it to the internet or untrusted networks. No
+                    authentication is included.</p>
+                <p>Use entirely at your own risk. The author takes no responsibility and accepts no liability for any
+                    damage, data loss, misuse, or other consequences resulting from the use, misuse, or distribution of
+                    this script. You are solely responsible for how you use it and for complying with any applicable
+                    laws.</p>
+            </div>
+        </div>
+
+        <h2>Code</h2>
+        <pre><code id="code-block">Loading...</code></pre>
+    </div>
+
+    <script>
+        const FILE = '/static/scripts/blue1.ps1';
+        const out = document.getElementById('code-block');
+
+        fetch(FILE, { cache: 'no-store' })
+            .then(r => r.ok ? r.text() : Promise.reject(new Error(r.status)))
+            .then(t => { out.textContent = t; })
+            .catch(() => {
+                out.textContent = 'Could not load ' + FILE;
+            });
+    </script>
+</body>
+
+</html>

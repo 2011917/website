@@ -181,7 +181,7 @@
         .thumb img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             display: block;
         }
 
@@ -302,12 +302,13 @@
     <div class="wrap">
         <div class="page-head">
             <h1>Projects</h1>
-            <p class="sub">A selection of things I've built. Filter by type or open a project to see more.</p>
+            <p class="sub">Things i have made for fun.</p>
         </div>
 
         <div class="filters">
             <button class="filter active" data-filter="all">All</button>
             <button class="filter" data-filter="HTML">HTML</button>
+            <button class="filter" data-filter="Rust">Rust</button>
 
         </div>
 
@@ -315,7 +316,7 @@
 
             <div class="project" data-category="HTML" data-demo="/notepad"
                 data-source="https://github.com/2011917/website/blob/master/templates/notepad.html">
-                <div class="thumb"><img src="/static/images/notepad_thumbnail.png" alt="Failed to load thumbnail"
+                <div class="thumb"><img src="/static/images/notepad.svg" alt="Failed to load thumbnail"
                         onerror="this.parentElement.classList.add('no-image'); this.remove();"><span
                         class="fallback-label">thumbnail</span></div>
                 <div class="project-body">
@@ -332,7 +333,7 @@
 
             <div class="project" data-category="HTML" data-demo="/moon"
                 data-source="https://github.com/2011917/website/blob/master/templates/moon.html">
-                <div class="thumb"><img src="/static/images/notepad_thumbnail.png" alt="Failed to load thumbnail"
+                <div class="thumb"><img src="/static/images/moon.svg" alt="Failed to load thumbnail"
                         onerror="this.parentElement.classList.add('no-image'); this.remove();"><span
                         class="fallback-label">thumbnail</span></div>
                 <div class="project-body">
@@ -347,7 +348,39 @@
                 </div>
             </div>
 
+            <div class="project" data-category="powershell" data-demo="/RemoteDesktop" data-source="/RemoteDesktop">
+                <div class="thumb"><img src="/static/images/remote.svg" alt="Failed to load thumbnail"
+                        onerror="this.parentElement.classList.add('no-image'); this.remove();"><span
+                        class="fallback-label">thumbnail</span></div>
+                <div class="project-body">
+                    <div class="tag-row"><span class="tag">PowerShell</span></div>
+                    <h3>remote desktop control</h3>
+                    <p>A remote desktop program that can control your windows laptop on your local network</p>
 
+                    <div class="project-actions">
+                        <button class="btn-primary" data-action="view">View project</button>
+                        <button class="btn-ghost" data-action="source">Source</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="project" data-category="Rust" data-demo="https://github.com/2011917/rustreader"
+                data-source="https://github.com/2011917/rustreader">
+                <div class="thumb"><img src="/static/images/fast.svg" alt="Failed to load thumbnail"
+                        onerror="this.parentElement.classList.add('no-image'); this.remove();"><span
+                        class="fallback-label">thumbnail</span></div>
+                <div class="project-body">
+                    <div class="tag-row"><span class="tag">Rust</span></div>
+                    <h3>RSVP Speed Reader</h3>
+                    <p>A speed reader that flashes one word at a time with a highlighted focus letter. Adjustable speed,
+                        smart pacing for punctuation and long words, and file drag and drop.</p>
+
+                    <div class="project-actions">
+                        <button class="btn-primary" data-action="view">View project</button>
+                        <button class="btn-ghost" data-action="source">Source</button>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>

@@ -17,8 +17,13 @@ def moon():
 
 
 @app.route("/notepad")
-def uploader():
+def notepad():
     return render_template('notepad.html')
+
+
+@app.route("/RemoteDesktop")
+def remotedesktop():
+    return render_template('controler.html')
 
 
 
