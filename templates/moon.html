@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#060a08">
+    <meta name="color-scheme" content="dark">
     <title>Moon Finder</title>
     <style>
         :root {
             --bg: #060a08;
             --bg-panel: #0b110d;
-            --bg-panel-2: #0f1712;
             --border: #1a2e22;
             --border-bright: #2b5c3e;
             --text: #d9f5e6;
@@ -25,18 +26,27 @@
             box-sizing: border-box
         }
 
+        [hidden] {
+            display: none !important
+        }
+
         html,
         body {
             height: 100%;
             margin: 0;
-            overflow: hidden
+            overflow: hidden;
+            overscroll-behavior: none
         }
 
         body {
             background: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57, 255, 138, .08), transparent), var(--bg);
             color: var(--text);
             font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-            line-height: 1.5
+            line-height: 1.5;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent
         }
 
         #cam,
@@ -76,7 +86,16 @@
             font-size: .95rem
         }
 
+        .note {
+            color: var(--text-dim);
+            margin: 1.1rem 0 0;
+            font-size: .75rem;
+            opacity: .8
+        }
+
         .tag {
+            min-width: 3.3rem;
+            text-align: center;
             font-size: .68rem;
             padding: .15rem .5rem;
             border: 1px solid var(--green-dim);
@@ -101,7 +120,17 @@
             border-radius: 0;
             border: 1px solid transparent;
             cursor: pointer;
-            transition: background .12s ease, border-color .12s ease, box-shadow .12s ease
+            transition: background .12s ease, border-color .12s ease, box-shadow .12s ease, color .12s ease
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--green-bright);
+            outline-offset: 2px
+        }
+
+        button:disabled {
+            opacity: .45;
+            cursor: default
         }
 
         .btn-primary {
@@ -110,7 +139,7 @@
             border-color: var(--green)
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: var(--green-bright);
             border-color: var(--green-bright);
             box-shadow: 0 0 14px rgba(57, 255, 138, .4)
@@ -122,7 +151,7 @@
             border-color: var(--border)
         }
 
-        .btn-ghost:hover {
+        .btn-ghost:hover:not(:disabled) {
             color: var(--text);
             border-color: var(--border-bright)
         }
@@ -138,9 +167,10 @@
             left: 0;
             right: 0;
             bottom: 0;
-            padding: .9rem 1rem calc(.9rem + env(safe-area-inset-bottom, 0px));
+            padding: .9rem calc(1rem + env(safe-area-inset-right, 0px)) calc(.9rem + env(safe-area-inset-bottom, 0px)) calc(1rem + env(safe-area-inset-left, 0px));
             background: rgba(11, 17, 13, .88);
             border-top: 1px solid var(--border-bright);
+            -webkit-backdrop-filter: blur(6px);
             backdrop-filter: blur(6px);
             display: flex;
             flex-direction: column;
@@ -155,6 +185,10 @@
             color: var(--text-dim)
         }
 
+        .row span:last-child {
+            min-width: 0
+        }
+
         .row b {
             color: var(--text);
             font-weight: 600
@@ -162,12 +196,18 @@
 
         #st {
             font-size: .75rem;
-            color: var(--text-dim)
+            color: var(--text-dim);
+            min-height: 1.1rem
         }
 
         .actions {
             display: flex;
             gap: .6rem
+        }
+
+        .actions button {
+            flex: 1;
+            padding-inline: .5rem
         }
 
         #intro {
@@ -194,14 +234,19 @@
 
 <body>
     <video id="cam" playsinline muted autoplay></video>
-    <canvas id="c"></canvas>
+    <canvas id="c" aria-hidden="true"></canvas>
     <div id="safe"></div>
 
     <div class="hud">
         <div class="row"><span class="tag">Moon</span><span id="mi">—</span></div>
         <div class="row"><span class="tag sun">Sun</span><span id="si">—</span></div>
-        <div id="st">Waiting to start…</div>
-        <div class="actions"><button id="camBtn" class="btn-ghost">Camera: off</button></div>
+        <div id="st" aria-live="polite">Waiting to start…</div>
+        <div class="actions">
+            <button id="camBtn" class="btn-ghost">Camera: off</button>
+            <button id="calBtn" class="btn-ghost"
+                title="Aim the centre mark at the visible moon or sun, then tap">Calibrate</button>
+            <button id="rstBtn" class="btn-ghost" hidden>Reset</button>
+        </div>
     </div>
 
     <div id="intro">
@@ -210,6 +255,7 @@
             <p class="sub">Point your phone at the sky. Uses GPS, motion sensors and (optionally) the camera to locate
                 the moon and sun, even below the horizon.</p>
             <button id="go" class="btn-primary">Start</button>
+            <p class="note">Never look directly at the sun, and never through a camera or binoculars.</p>
         </div>
     </div>
 
@@ -218,11 +264,22 @@
         const cv = $('c'), ctx = cv.getContext('2d'), vid = $('cam'), hud = document.querySelector('.hud');
         const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
         const G = css('--green'), GD = css('--green-dim'), SUN = css('--sun'), TXT = css('--text'), DIM = css('--text-dim');
-        let W, H, f, safeTop = 0, pos = null, sm = null, Rm = null, A = null, absSeen = false, noNorth = false, gpsMsg = 'Waiting for GPS…';
-        const FONT = '"Inter","Segoe UI",system-ui,sans-serif';
+        const FONT = '"Inter","Segoe UI",system-ui,sans-serif', RAD = 26, K = .3, KEY = 'moonfinder.northOffset';
+        const wrap180 = a => ((a % 360) + 540) % 360 - 180;
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+        let W, H, f, safeTop = 0;
+        let pos = null, Rm = null, A = null;            // position, smoothed device->earth rotation, astro data
+        let absSeen = false, noNorth = false, started = false, dragMode = false;
+        let gpsMsg = 'Waiting for GPS…', sensorMsg = '', flash = null, northOff = 0, wakeLock = null;
+        const view = { h: 180, p: 20 };                 // used only in drag-to-look mode
+        try { northOff = parseFloat(localStorage.getItem(KEY)) || 0 } catch (e) { }
+        const say = (t, ms = 4000) => flash = { t, until: performance.now() + ms };
 
         function resize() {
-            const d = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+            const d = devicePixelRatio || 1; W = innerWidth; H = innerHeight;
+            cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
             f = (Math.max(W, H) / 2) / Math.tan(33 * D); safeTop = $('safe').offsetHeight
         }
         addEventListener('resize', resize); resize();
@@ -238,25 +295,43 @@
             const L = D * (218.316 + 13.176396 * d), Mm = D * (134.963 + 13.064993 * d), F = D * (93.272 + 13.22935 * d);
             const l = L + D * 6.289 * sin(Mm), b = D * 5.128 * sin(F);
             const m = { ra: ra(l, b), dec: de(l, b), dist: 385001 - 20905 * cos(Mm) };
-            const st = D * (280.16 + 360.9856235 * d) - (-lon * D);
+            const st = D * (280.16 + 360.9856235 * d) + lon * D;
             const hor = (o, par) => {
                 const h = st - o.ra; let alt = Math.asin(sin(phi) * sin(o.dec) + cos(phi) * cos(o.dec) * cos(h));
                 const az = Math.atan2(sin(h), cos(h) * sin(phi) - Math.tan(o.dec) * cos(phi));
                 if (par) alt -= Math.asin(6371 / o.dist * cos(alt));
                 return { az: (az * R + 180 + 360) % 360, alt: alt * R }
             };
-            const dr = s.ra - m.ra, p2 = Math.acos(sin(s.dec) * sin(m.dec) + cos(s.dec) * cos(m.dec) * cos(dr));
+            const dr = s.ra - m.ra, p2 = Math.acos(clamp(sin(s.dec) * sin(m.dec) + cos(s.dec) * cos(m.dec) * cos(dr), -1, 1));
             const inc = Math.atan2(s.dist * sin(p2), m.dist - s.dist * cos(p2));
             const ang = Math.atan2(cos(s.dec) * sin(dr), sin(s.dec) * cos(m.dec) - cos(s.dec) * sin(m.dec) * cos(dr));
             const phase = .5 + .5 * inc * (ang < 0 ? -1 : 1) / Math.PI;
             return { moon: { ...hor(m, 1), frac: (1 + cos(inc)) / 2, phase }, sun: hor(s, 0) }
         }
-        function phaseName(p) { return p < .03 || p > .97 ? 'New moon' : p < .22 ? 'Waxing crescent' : p < .28 ? 'First quarter' : p < .47 ? 'Waxing gibbous' : p < .53 ? 'Full moon' : p < .72 ? 'Waning gibbous' : p < .78 ? 'Last quarter' : 'Waning crescent' }
+        function phaseName(p) {
+            return p < .03 || p > .97 ? 'New moon' : p < .22 ? 'Waxing crescent' : p < .28 ? 'First quarter' : p < .47 ? 'Waxing gibbous'
+                : p < .53 ? 'Full moon' : p < .72 ? 'Waning gibbous' : p < .78 ? 'Last quarter' : 'Waning crescent'
+        }
 
         /* ---------- orientation / projection ---------- */
-        function setR(a, b, g) {
-            a *= D; b *= D; g *= D; const cA = Math.cos(a), sA = Math.sin(a), cB = Math.cos(b), sB = Math.sin(b), cG = Math.cos(g), sG = Math.sin(g);
-            Rm = [[cA * cG - sA * sB * sG, -sA * cB, cA * sG + sA * sB * cG], [sA * cG + cA * sB * sG, cA * cB, sA * sG - cA * sB * cG], [-cB * sG, sB, cB * cG]]
+        // Device->earth rotation (x east, y north, z up) from W3C alpha/beta/gamma.
+        function eulerToR(a, b, g) {
+            a *= D; b *= D; g *= D;
+            const cA = Math.cos(a), sA = Math.sin(a), cB = Math.cos(b), sB = Math.sin(b), cG = Math.cos(g), sG = Math.sin(g);
+            return [[cA * cG - sA * sB * sG, -sA * cB, cA * sG + sA * sB * cG],
+            [sA * cG + cA * sB * sG, cA * cB, sA * sG - cA * sB * cG],
+            [-cB * sG, sB, cB * cG]]
+        }
+        function orthonormalize(M) {
+            const nrm = v => { const l = Math.hypot(...v) || 1; return v.map(x => x / l) };
+            const e0 = nrm([M[0][0], M[1][0], M[2][0]]), c1 = [M[0][1], M[1][1], M[2][1]], d = dot(e0, c1);
+            const e1 = nrm(c1.map((x, i) => x - d * e0[i]));
+            const e2 = [e0[1] * e1[2] - e0[2] * e1[1], e0[2] * e1[0] - e0[0] * e1[2], e0[0] * e1[1] - e0[1] * e1[0]];
+            return [[e0[0], e1[0], e2[0]], [e0[1], e1[1], e2[1]], [e0[2], e1[2], e2[2]]]
+        }
+        // Smooth in matrix space (no Euler wrap-around glitches when looking near the zenith).
+        function pushRaw(T) {
+            Rm = Rm ? orthonormalize(Rm.map((row, i) => row.map((v, j) => v + (T[i][j] - v) * K))) : T
         }
         const vec = (az, alt) => [Math.cos(alt * D) * Math.sin(az * D), Math.cos(alt * D) * Math.cos(az * D), Math.sin(alt * D)];
         function toScr(v) {
@@ -268,18 +343,37 @@
             return { sx, sy, front, x: front ? W / 2 + f * sx / -dz : 0, y: front ? H / 2 - f * sy / -dz : 0 }
         }
         const fwd = () => [-Rm[0][2], -Rm[1][2], -Rm[2][2]];
+        const headingOf = F => (Math.atan2(F[0], F[1]) * R + 360) % 360;
+        const angDist = (F, v) => Math.acos(clamp(dot(F, v), -1, 1)) * R;
 
         function onOri(e) {
-            if (e.type === 'deviceorientationabsolute') absSeen = true; else if (absSeen) return;
+            if (e.type !== 'deviceorientationabsolute' && absSeen) return;
             let a = e.alpha; if (e.webkitCompassHeading != null) a = 360 - e.webkitCompassHeading;
             if (a == null || e.beta == null || e.gamma == null) return;
+            if (e.type === 'deviceorientationabsolute') absSeen = true;
             noNorth = !absSeen && e.webkitCompassHeading == null && !e.absolute;
-            if (!sm) sm = { a, b: e.beta, g: e.gamma };
-            else { const k = .35; sm.a = (sm.a + (((a - sm.a + 540) % 360) - 180) * k + 360) % 360; sm.b += (e.beta - sm.b) * k; sm.g += (e.gamma - sm.g) * k }
+            if (dragMode) { dragMode = false; Rm = null; sensorMsg = ''; $('calBtn').disabled = false }   // real sensors arrived late
+            pushRaw(eulerToR(a - northOff, e.beta, e.gamma))
         }
 
+        /* ---------- drag-to-look fallback (desktop / no sensors) ---------- */
+        const applyView = () => Rm = eulerToR(360 - view.h, 90 + view.p, 0);
+        function enableDrag() {
+            dragMode = true; $('calBtn').disabled = true;
+            sensorMsg = window.isSecureContext ? 'No compass data from this device' : 'Compass needs HTTPS (this page is on http)';
+            if (pos) { const a = astro(new Date(), pos.lat, pos.lon); view.h = a.moon.az; view.p = clamp(a.moon.alt, -10, 60) }
+            applyView()
+        }
+        let drag = null;
+        addEventListener('pointerdown', e => { if (dragMode && started && !e.target.closest('.hud')) drag = { x: e.clientX, y: e.clientY } });
+        addEventListener('pointermove', e => {
+            if (!drag) return; const ppd = f * D;
+            view.h = (view.h - (e.clientX - drag.x) / ppd + 360) % 360; view.p = clamp(view.p + (e.clientY - drag.y) / ppd, -89, 89);
+            drag.x = e.clientX; drag.y = e.clientY; applyView()
+        });
+        ['pointerup', 'pointercancel'].forEach(t => addEventListener(t, () => drag = null));
+
         /* ---------- drawing ---------- */
-        const RAD = 26;
         function drawMoon(p, m, ang) {
             ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(ang);
             ctx.beginPath(); ctx.arc(0, 0, RAD, 0, 7); ctx.fillStyle = 'rgba(57,255,138,.07)'; ctx.fill(); ctx.strokeStyle = GD; ctx.lineWidth = 1.5; ctx.stroke();
@@ -290,13 +384,18 @@
         }
         function drawSun(p) { ctx.save(); ctx.beginPath(); ctx.arc(p.x, p.y, RAD, 0, 7); ctx.fillStyle = SUN; ctx.shadowColor = SUN; ctx.shadowBlur = 30; ctx.fill(); ctx.restore() }
         function label(t, x, y, c) { ctx.save(); ctx.font = '600 11px ' + FONT; ctx.textAlign = 'center'; ctx.fillStyle = c; ctx.shadowColor = '#000'; ctx.shadowBlur = 4; ctx.fillText(t, x, y); ctx.restore() }
+        function reticle() {
+            const x = W / 2, y = H / 2; ctx.save(); ctx.strokeStyle = 'rgba(125,255,176,.55)'; ctx.lineWidth = 1; ctx.beginPath();
+            ctx.moveTo(x - 12, y); ctx.lineTo(x - 4, y); ctx.moveTo(x + 4, y); ctx.lineTo(x + 12, y);
+            ctx.moveTo(x, y - 12); ctx.lineTo(x, y - 4); ctx.moveTo(x, y + 4); ctx.lineTo(x, y + 12); ctx.stroke(); ctx.restore()
+        }
         function arrow(p, c, t) {
-            let ux = p.sx, uy = -p.sy; const n = Math.hypot(ux, uy) || 1; ux /= n; uy /= n; if (n < 1e-6) { ux = 0; uy = -1 }
+            let ux = p.sx, uy = -p.sy; const n = Math.hypot(ux, uy); if (n < 1e-6) { ux = 0; uy = -1 } else { ux /= n; uy /= n }
             const top = safeTop + 72, bot = hud.offsetHeight + 16, mx = 30, cy = (top + H - bot) / 2, hh = (H - bot - top) / 2, hw = W / 2 - mx;
             const k = Math.min(hw / (Math.abs(ux) || 1e-9), hh / (Math.abs(uy) || 1e-9)), x = W / 2 + ux * k, y = cy + uy * k;
             ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(uy, ux)); ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -11); ctx.lineTo(-8, 11); ctx.closePath();
             ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 14; ctx.fill(); ctx.restore();
-            label(t, x - ux * 34, y - uy * 34 + 4, c)
+            label(t, clamp(x - ux * 34, 50, W - 50), y - uy * 34 + 4, c)
         }
         function compass(h, pitch) {
             const top = safeTop + 10, bh = 36, ppd = f * D, span = (W - 16) / ppd;
@@ -310,14 +409,14 @@
                 else if (mid) { ctx.font = '10px ' + FONT; ctx.fillStyle = DIM; ctx.fillText(n, x, top + 16) }
             }
             [[A.moon, G, 1], [A.sun, SUN, 0]].forEach(([o, c, sq]) => {
-                const dd = ((o.az - h + 540) % 360) - 180; if (Math.abs(dd) < span / 2) {
+                const dd = wrap180(o.az - h); if (Math.abs(dd) < span / 2) {
                     const x = W / 2 + dd * ppd; ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 8;
                     ctx.beginPath(); if (sq) ctx.rect(x - 4, top + 3, 8, 8); else ctx.arc(x, top + 7, 4.5, 0, 7); ctx.fill()
                 }
             });
             ctx.restore();
             ctx.fillStyle = G; ctx.beginPath(); ctx.moveTo(W / 2 - 6, top + bh + 1); ctx.lineTo(W / 2 + 6, top + bh + 1); ctx.lineTo(W / 2, top + bh + 8); ctx.fill();
-            label(Math.round(h) + '°  ' + (pitch >= 0 ? '↑' : '↓') + ' ' + Math.abs(Math.round(pitch)) + '°', W / 2, top + bh + 23, TXT)
+            label((Math.round(h) % 360) + '°  ' + (pitch >= 0 ? '↑' : '↓') + ' ' + Math.abs(Math.round(pitch)) + '°', W / 2, top + bh + 23, TXT)
         }
         function horizon() {
             ctx.save(); ctx.strokeStyle = GD; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]); ctx.beginPath(); let pen = false, lx = 0;
@@ -325,12 +424,13 @@
             ctx.stroke(); ctx.restore()
         }
         function body(o, kind, name) {
-            const v = vec(o.az, o.alt), p = toScr(v), F = fwd(), dist = Math.acos(Math.max(-1, Math.min(1, F[0] * v[0] + F[1] * v[1] + F[2] * v[2]))) * R;
+            const v = vec(o.az, o.alt), p = toScr(v), dist = angDist(fwd(), v);
             const c = kind == 'moon' ? G : SUN, m = RAD + 4, on = p.front && p.x > -m && p.x < W + m && p.y > -m && p.y < H + m;
             if (!on) { arrow(p, c, name + ' ' + Math.round(dist) + '°'); return }
             if (kind == 'moon') {
-                const S = vec(A.sun.az, A.sun.alt), dot = S[0] * v[0] + S[1] * v[1] + S[2] * v[2], t = S.map((s, i) => s - dot * v[i]), tn = Math.hypot(...t) || 1;
-                const v2 = v.map((x, i) => x + .03 * t[i] / tn), q = toScr(v2);
+                // Orient the lit limb toward the sun as seen on screen.
+                const S = vec(A.sun.az, A.sun.alt), d = dot(S, v), t = S.map((s, i) => s - d * v[i]), tn = Math.hypot(...t) || 1;
+                const q = toScr(v.map((x, i) => x + .03 * t[i] / tn));
                 drawMoon(p, o, q.front ? Math.atan2(q.y - p.y, q.x - p.x) : 0)
             }
             else drawSun(p);
@@ -339,18 +439,44 @@
 
         function frame() {
             requestAnimationFrame(frame); ctx.clearRect(0, 0, W, H);
-            if (!sm || !pos) return;
-            setR(sm.a, sm.b, sm.g); A = astro(new Date(), pos.lat, pos.lon);
-            const F = fwd(), h = (Math.atan2(F[0], F[1]) * R + 360) % 360, pitch = Math.asin(F[2]) * R;
-            horizon(); body(A.sun, 'sun', 'SUN'); body(A.moon, 'moon', 'MOON'); compass(h, pitch)
+            if (!Rm || !pos) return;
+            A = astro(new Date(), pos.lat, pos.lon);
+            const F = fwd(), h = headingOf(F), pitch = Math.asin(clamp(F[2], -1, 1)) * R;
+            horizon(); body(A.sun, 'sun', 'SUN'); body(A.moon, 'moon', 'MOON'); reticle(); compass(h, pitch)
         }
 
+        /* ---------- calibration (magnetic vs true north) ---------- */
+        const saveOff = () => { try { localStorage.setItem(KEY, northOff) } catch (e) { } };
+        $('calBtn').onclick = () => {
+            if (!Rm || !A || dragMode) return;
+            const F = fwd(), h = headingOf(F);
+            const c = [[A.moon, 'moon'], [A.sun, 'sun']].filter(([o]) => o.alt > 0)
+                .map(([o, n]) => ({ o, n, d: angDist(F, vec(o.az, o.alt)) })).sort((a, b) => a.d - b.d)[0];
+            if (!c) return say('Moon and sun are both below the horizon, so there is nothing to align to');
+            if (c.d > 45 || c.o.alt > 75) return say('Aim the centre mark at the ' + c.n + ' (not too high up), then tap Calibrate');
+            northOff = wrap180(northOff + (c.o.az - h)); saveOff(); say('Aligned to the ' + c.n)
+        };
+        $('rstBtn').onclick = () => { northOff = 0; saveOff(); say('North offset reset') };
+
         /* ---------- HUD ---------- */
+        let lastSt = '';
         setInterval(() => {
-            const st = $('st');
-            if (!pos || !sm) { st.textContent = !pos ? gpsMsg : 'Waiting for motion sensors… (needs a phone/tablet)'; }
-            else st.textContent = gpsMsg + (noNorth ? ' · compass may not point to true north' : '');
-            if (!A || !pos || !sm) return;
+            let st;
+            if (flash && performance.now() < flash.until) st = flash.t;
+            else if (!pos) st = gpsMsg;
+            else if (!Rm) st = 'Waiting for compass…';
+            else {
+                const parts = [gpsMsg];
+                if (dragMode) parts.push(sensorMsg, 'drag to look around');
+                else {
+                    if (noNorth) parts.push('compass may not point to true north');
+                    if (Math.abs(northOff) > .5) parts.push('north ' + (northOff > 0 ? '+' : '') + northOff.toFixed(0) + '°')
+                }
+                st = parts.join(' · ')
+            }
+            if (st !== lastSt) { $('st').textContent = st; lastSt = st }
+            $('rstBtn').hidden = Math.abs(northOff) <= .5;
+            if (!A || !pos || !Rm) return;
             const m = A.moon, s = A.sun, fx = v => v.toFixed(1) + '°';
             $('mi').innerHTML = `<b>${phaseName(m.phase)}</b> · ${Math.round(m.frac * 100)}% lit · Az ${fx(m.az)} · Alt ${fx(m.alt)}${m.alt < 0 ? ' (below horizon)' : ''}`;
             $('si').innerHTML = `Az <b>${fx(s.az)}</b> · Alt <b>${fx(s.alt)}</b>${s.alt < 0 ? ' (below horizon)' : ''}`
@@ -364,18 +490,29 @@
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
                 vid.srcObject = stream; vid.style.display = 'block'; await vid.play(); cb.textContent = 'Camera: on'; cb.classList.add('on')
             }
-            catch (e) { stream = null; gpsMsg = 'Camera unavailable (needs HTTPS + permission)' }
+            catch (e) { if (stream) stream.getTracks().forEach(t => t.stop()); stream = null; say('Camera unavailable (needs HTTPS + permission)') }
         };
 
         /* ---------- start ---------- */
+        async function keepAwake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen') } catch (e) { } }
+        document.addEventListener('visibilitychange', () => { if (started && !document.hidden) keepAwake() });
+
         $('go').onclick = async () => {
+            if (started) return; started = true; $('go').disabled = true;
+            // Motion permission first, synchronously inside the tap (iOS requires a user gesture).
+            let motionOK = true;
+            try { const DOE = window.DeviceOrientationEvent; if (DOE && typeof DOE.requestPermission === 'function') motionOK = (await DOE.requestPermission()) === 'granted' }
+            catch (e) { motionOK = false }
             if (navigator.geolocation) navigator.geolocation.watchPosition(
                 p => { pos = { lat: p.coords.latitude, lon: p.coords.longitude }; gpsMsg = 'GPS ±' + Math.round(p.coords.accuracy) + ' m' },
-                e => { gpsMsg = 'GPS error: ' + e.message }, { enableHighAccuracy: true, maximumAge: 10000 });
+                e => { gpsMsg = e.code === 1 ? 'Location blocked: allow it in your browser settings' : 'GPS error: ' + e.message },
+                { enableHighAccuracy: true, maximumAge: 10000 });
             else gpsMsg = 'GPS not supported';
-            try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) { if (await DeviceOrientationEvent.requestPermission() !== 'granted') gpsMsg = 'Motion permission denied' } } catch (e) { gpsMsg = 'Motion permission error' }
-            addEventListener('deviceorientationabsolute', onOri, true); addEventListener('deviceorientation', onOri, true);
-            $('intro').style.display = 'none'; resize()
+            if (motionOK) {
+                addEventListener('deviceorientationabsolute', onOri, true); addEventListener('deviceorientation', onOri, true);
+                setTimeout(() => { if (!Rm && !dragMode) enableDrag() }, 3500)   // no sensors found: fall back to drag-to-look
+            } else { say('Motion permission denied, so drag to look around instead', 6000); enableDrag() }
+            $('intro').style.display = 'none'; resize(); keepAwake()
         };
         frame();
     </script>
