@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>P2P Share · Ikvyn</title>
+    <style>
+        :root {
+            --bg: #060a08;
+            --panel: #0b110d;
+            --panel2: #0f1712;
+            --border: #1a2e22;
+            --border-b: #2b5c3e;
+            --text: #d9f5e6;
+            --dim: #7fa593;
+            --green: #39ff8a;
+            --green-b: #7dffb0;
+            --green-d: #1c7a48;
+            --red: #ff5c6c;
+            --amber: #ffc857;
+            font-size: 16px
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            background: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57, 255, 138, .08), transparent), var(--bg);
+            color: var(--text);
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 3rem 1.5rem 5rem;
+            line-height: 1.5;
+            min-height: 100vh
+        }
+
+        .wrap {
+            max-width: 760px;
+            margin: 0 auto
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 760px;
+            margin: 0 auto 2.5rem;
+            padding-bottom: 1.1rem;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none
+        }
+
+        .logo .mark {
+            width: 22px;
+            height: 22px;
+            background: var(--green);
+            box-shadow: 0 0 12px rgba(57, 255, 138, .5)
+        }
+
+        .topbar a.back {
+            color: var(--dim);
+            text-decoration: none;
+            font-size: .87rem;
+            transition: color .12s
+        }
+
+        .topbar a.back:hover {
+            color: var(--green)
+        }
+
+        h1 {
+            font-size: 2.1rem;
+            margin: 0 0 .4rem;
+            letter-spacing: -.02em;
+            text-shadow: 0 0 24px rgba(57, 255, 138, .25)
+        }
+
+        .sub {
+            color: var(--dim);
+            margin: 0 0 2rem;
+            font-size: .95rem;
+            max-width: 560px
+        }
+
+        .hidden {
+            display: none !important
+        }
+
+        .cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 1.4rem;
+            display: flex;
+            flex-direction: column;
+            transition: border-color .15s, box-shadow .15s
+        }
+
+        .card:hover {
+            border-color: var(--border-b);
+            box-shadow: 0 0 20px rgba(57, 255, 138, .08)
+        }
+
+        .step {
+            font-size: .68rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--green);
+            margin-bottom: .5rem
+        }
+
+        .card h3 {
+            margin: 0 0 .4rem;
+            font-size: 1.05rem
+        }
+
+        .card p {
+            margin: 0 0 1.2rem;
+            color: var(--dim);
+            font-size: .87rem;
+            flex: 1
+        }
+
+        button,
+        .btn {
+            font-family: inherit;
+            font-size: .83rem;
+            font-weight: 600;
+            padding: .65rem 1rem;
+            border-radius: 0;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background .12s, border-color .12s, box-shadow .12s
+        }
+
+        .primary {
+            background: var(--green);
+            color: #04140b;
+            border-color: var(--green)
+        }
+
+        .primary:hover {
+            background: var(--green-b);
+            border-color: var(--green-b);
+            box-shadow: 0 0 14px rgba(57, 255, 138, .4)
+        }
+
+        .ghost {
+            background: transparent;
+            color: var(--dim);
+            border-color: var(--border)
+        }
+
+        .ghost:hover {
+            color: var(--text);
+            border-color: var(--border-b)
+        }
+
+        .row {
+            display: flex;
+            gap: .6rem
+        }
+
+        .row .primary {
+            flex: 0 0 auto
+        }
+
+        input.code {
+            flex: 1;
+            min-width: 0;
+            background: var(--panel2);
+            border: 1px solid var(--border);
+            color: var(--green);
+            font: 600 1.05rem ui-monospace, Consolas, monospace;
+            letter-spacing: .3em;
+            text-transform: uppercase;
+            text-align: center;
+            padding: .6rem;
+            outline: none;
+            border-radius: 0
+        }
+
+        input.code:focus {
+            border-color: var(--green-d);
+            box-shadow: 0 0 12px rgba(57, 255, 138, .15)
+        }
+
+        input.code::placeholder {
+            letter-spacing: .1em;
+            color: var(--green-d);
+            font-weight: 400;
+            font-size: .85rem
+        }
+
+        .bar-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            padding: .4rem .8rem;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            background: var(--panel)
+        }
+
+        .pill i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--dim)
+        }
+
+        .pill.wait i {
+            background: var(--amber);
+            animation: pulse 1.2s infinite
+        }
+
+        .pill.ok {
+            color: var(--green);
+            border-color: var(--green-d)
+        }
+
+        .pill.ok i {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green)
+        }
+
+        .pill.err {
+            color: var(--red);
+            border-color: #5c2229
+        }
+
+        .pill.err i {
+            background: var(--red)
+        }
+
+        @keyframes pulse {
+            50% {
+                opacity: .25
+            }
+        }
+
+        .share {
+            background: var(--panel);
+            border: 1px solid var(--border-b);
+            padding: 1.4rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0 24px rgba(57, 255, 138, .06)
+        }
+
+        .share small {
+            display: block;
+            color: var(--dim);
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: .6rem
+        }
+
+        .share .big {
+            font: 700 2.4rem ui-monospace, Consolas, monospace;
+            letter-spacing: .35em;
+            padding-left: .35em;
+            color: var(--green);
+            text-shadow: 0 0 20px rgba(57, 255, 138, .5)
+        }
+
+        .share button {
+            margin-top: .8rem
+        }
+
+        .drop {
+            border: 1px dashed var(--border-b);
+            background: repeating-linear-gradient(135deg, rgba(57, 255, 138, .04) 0 2px, transparent 2px 14px), var(--panel2);
+            padding: 2.6rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background-color .15s, opacity .2s
+        }
+
+        .drop:hover,
+        .drop.over {
+            border-color: var(--green);
+            box-shadow: 0 0 20px rgba(57, 255, 138, .12) inset
+        }
+
+        .drop.off {
+            opacity: .35;
+            pointer-events: none
+        }
+
+        .drop b {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: .2rem
+        }
+
+        .drop span {
+            color: var(--dim);
+            font-size: .85rem
+        }
+
+        .list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: .75rem
+        }
+
+        .list h4 {
+            margin: 0;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--dim)
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: .85rem 1rem
+        }
+
+        .ico {
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--green-d);
+            color: var(--green);
+            background: rgba(57, 255, 138, .05);
+            font-weight: 700
+        }
+
+        .meta {
+            flex: 1;
+            min-width: 0
+        }
+
+        .nm {
+            font-size: .9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: .4rem
+        }
+
+        .prog {
+            height: 4px;
+            background: var(--panel2);
+            border: 1px solid var(--border);
+            overflow: hidden
+        }
+
+        .prog i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            transition: width .1s
+        }
+
+        .sz {
+            font-size: .78rem;
+            color: var(--dim);
+            white-space: nowrap
+        }
+
+        .item a {
+            color: #04140b;
+            background: var(--green);
+            text-decoration: none;
+            font-size: .78rem;
+            font-weight: 600;
+            padding: .4rem .8rem
+        }
+
+        .item a:hover {
+            background: var(--green-b)
+        }
+
+        .foot {
+            margin-top: 2.5rem;
+            color: var(--dim);
+            font-size: .78rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <a href="/" class="logo"><span class="mark"></span>IKVYN</a>
+        <a href="/" class="back">&larr; Projects</a>
+    </div>
+
+    <div class="wrap">
+        <h1>P2P Share</h1>
+        <p class="sub">Send files straight between two browsers. Nothing is uploaded to a server &mdash; it only helps
+            the devices find each other.</p>
+
+        <div id="lobby" class="cols">
+            <div class="card">
+                <div class="step">Option 1</div>
+                <h3>Host a room</h3>
+                <p>Get a code and share it with the other device.</p>
+                <button class="primary" id="host">Create room</button>
+            </div>
+            <div class="card">
+                <div class="step">Option 2</div>
+                <h3>Join a room</h3>
+                <p>Enter the code shown on the other device.</p>
+                <div class="row">
+                    <input class="code" id="code" maxlength="6" placeholder="CODE" autocomplete="off"
+                        spellcheck="false">
+                    <button class="primary" id="join">Join</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="session" class="hidden">
+            <div class="bar-top">
+                <span class="pill" id="pill"><i></i><em id="ptxt">idle</em></span>
+                <button class="ghost" onclick="location.reload()">Leave</button>
+            </div>
+            <div class="share hidden" id="share">
+                <small>Room code</small>
+                <div class="big" id="rc"></div>
+                <button class="ghost" id="copy">Copy code</button>
+            </div>
+            <div class="drop off" id="drop">
+                <b>Drop files here</b>
+                <span>or click to choose &middot; multiple files supported</span>
+                <input type="file" id="f" multiple hidden>
+            </div>
+            <div class="list hidden" id="listwrap">
+                <h4>Transfers</h4>
+                <div class="list" id="list" style="margin:0"></div>
+            </div>
+        </div>
+
+        <div class="foot">Connection is direct and encrypted (WebRTC). Anyone with the code can join while the room is
+            open, so only share it with the person you trust.</div>
+    </div>
+
+    <script>
+        const $ = s => document.querySelector(s);
+        const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const fmt = b => { const u = ['B', 'KB', 'MB', 'GB']; let i = 0; while (b >= 1024 && i < 3) { b /= 1024; i++ } return b.toFixed(i ? 1 : 0) + ' ' + u[i] };
+        let pc, dc, room, me, peer, timer, inc, pend = [], q = Promise.resolve(), live = false;
+
+        const send = m => fetch(`/share/send/${room}/${peer}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m) });
+        function status(cls, t) { $('#pill').className = 'pill ' + cls; $('#ptxt').textContent = t }
+        function enter() { $('#lobby').classList.add('hidden'); $('#session').classList.remove('hidden') }
+
+        function setup() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+            pc.onicecandidate = e => e.candidate && send({ c: e.candidate });
+            pc.ondatachannel = e => chan(e.channel);
+            pc.onconnectionstatechange = () => {
+                if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) { live = false; $('#drop').classList.add('off'); status('err', 'disconnected') }
+            };
+            timer = setInterval(poll, 1000);
+        }
+        async function flush() { for (const c of pend) await pc.addIceCandidate(c); pend = [] }
+        async function poll() {
+            for (const m of await (await fetch(`/share/poll/${room}/${me}`)).json()) {
+                if (m.o) { await pc.setRemoteDescription(m.o); const a = await pc.createAnswer(); await pc.setLocalDescription(a); send({ a: pc.localDescription }); await flush() }
+                if (m.a) { await pc.setRemoteDescription(m.a); await flush() }
+                if (m.c) pc.remoteDescription ? await pc.addIceCandidate(m.c) : pend.push(m.c);
+            }
+        }
+
+        function item(name, size, dir) {
+            $('#listwrap').classList.remove('hidden');
+            const el = document.createElement('div'); el.className = 'item';
+            el.innerHTML = '<div class="ico">' + (dir == 'up' ? '&uarr;' : '&darr;') + '</div><div class="meta"><div class="nm"></div><div class="prog"><i></i></div></div><div class="sz"></div>';
+            el.querySelector('.nm').textContent = name;
+            const bar = el.querySelector('.prog i'), sz = el.querySelector('.sz'); sz.textContent = fmt(size);
+            $('#list').prepend(el);
+            return {
+                set: v => bar.style.width = Math.min(v, 1) * 100 + '%',
+                done(blob) {
+                    bar.style.width = '100%';
+                    if (blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.textContent = 'Save'; sz.replaceWith(a) }
+                    else sz.textContent = 'Sent'
+                }
+            };
+        }
+
+        function chan(c) {
+            dc = c; c.binaryType = 'arraybuffer';
+            c.onopen = () => { live = true; clearInterval(timer); status('ok', 'connected'); $('#drop').classList.remove('off'); $('#share').classList.add('hidden') };
+            c.onmessage = e => {
+                if (typeof e.data == 'string') {
+                    const h = JSON.parse(e.data); inc = { ...h, b: [], g: 0, t: item(h.n, h.s, 'down') };
+                    if (!h.s) inc.t.done(new Blob([])); return;
+                }
+                inc.b.push(e.data); inc.g += e.data.byteLength; inc.t.set(inc.g / inc.s);
+                if (inc.g >= inc.s) inc.t.done(new Blob(inc.b));
+            };
+        }
+
+        function sendFile(f) {
+            q = q.then(async () => {
+                if (!live) return;
+                const t = item(f.name, f.size, 'up');
+                dc.send(JSON.stringify({ n: f.name, s: f.size }));
+                for (let o = 0; o < f.size; o += 16384) {
+                    while (dc.bufferedAmount > 1e6) await new Promise(r => setTimeout(r, 20));
+                    dc.send(await f.slice(o, o + 16384).arrayBuffer()); t.set(o / f.size);
+                }
+                t.done();
+            });
+        }
+
+        $('#host').onclick = () => {
+            room = Array.from({ length: 6 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
+            me = 'h'; peer = 'j'; enter(); setup();
+            $('#rc').textContent = room; $('#share').classList.remove('hidden');
+            status('wait', 'waiting for peer');
+        };
+        async function join() {
+            const v = $('#code').value.trim().toUpperCase();
+            if (v.length < 6) { $('#code').focus(); return }
+            room = v; me = 'j'; peer = 'h'; enter(); setup(); status('wait', 'connecting');
+            chan(pc.createDataChannel('f'));
+            await pc.setLocalDescription(await pc.createOffer());
+            send({ o: pc.localDescription });
+            setTimeout(() => { if (!live) status('err', 'no host found for that code') }, 20000);
+        }
+        $('#join').onclick = join;
+        $('#code').onkeydown = e => e.key == 'Enter' && join();
+        $('#copy').onclick = e => { navigator.clipboard.writeText(room); e.target.textContent = 'Copied'; setTimeout(() => e.target.textContent = 'Copy code', 1500) };
+
+        const drop = $('#drop');
+        drop.onclick = () => $('#f').click();
+        $('#f').onchange = e => { [...e.target.files].forEach(sendFile); e.target.value = '' };
+        ['dragenter', 'dragover'].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.add('over') }));
+        ['dragleave', 'drop'].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.remove('over') }));
+        drop.addEventListener('drop', e => [...e.dataTransfer.files].forEach(sendFile));
+    </script>
+</body>
+
+</html>

@@ -25,11 +25,12 @@ def notepad():
 def remotedesktop():
     return render_template('controler.html')
 
-
+from share import bp
+app.register_blueprint(bp)
 
 if __name__ == '__main__':
     # Get the port from Render's environment, defaulting to 5000 for local development
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     
     # 0.0.0.0 tells Flask to listen to all public network interfaces 
     app.run(host='0.0.0.0', port=port, debug=False)
