@@ -25,6 +25,17 @@ def notepad():
 def remotedesktop():
     return render_template('controler.html')
 
+
+@app.route("/gem")
+def gem():
+    return render_template("gemini.html")
+
+
+@app.route("/chat")
+def chat():
+    return render_template("chat.html")
+
+
 from share import bp
 app.register_blueprint(bp)
 
